@@ -327,7 +327,7 @@ async function restoreData() {
 }
 
 function scoreItem(item, query) {
-  const name = norm(item.name), code = norm(item.code), q = norm(query);
+  const name = norm([item.name, item.nameAr, ...(Array.isArray(item.aliases) ? item.aliases : [])].filter(Boolean).join(" ")), code = norm(item.code), q = norm(query);
   if (!q) return 0;
   if (code && code === q) return 1200;
   if (name === q) return 1150;
@@ -355,8 +355,50 @@ function editDistance(a,b) {
   }
   return previous[b.length];
 }
+const AR_MEDICAL_TERMS = {
+  "باراسيتامول":"paracetamol acetaminophen", "بنادول":"paracetamol acetaminophen", "اسيتامينوفين":"acetaminophen paracetamol",
+  "ايبوبروفين":"ibuprofen", "ديكلوفيناك":"diclofenac", "اموكسيسيلين":"amoxicillin", "ازيثرومايسين":"azithromycin",
+  "سيفترياكسون":"ceftriaxone", "ميترونيدازول":"metronidazole", "اوميبرازول":"omeprazole", "بانتوبرازول":"pantoprazole",
+  "ميتفورمين":"metformin", "انسولين":"insulin", "اسبرين":"aspirin", "اتورفاستاتين":"atorvastatin",
+  "املوديبين":"amlodipine", "لوسارتان":"losartan", "كابتوبريل":"captopril", "سالبيوتامول":"salbutamol albuterol",
+  "فوروسيميد":"furosemide", "سيتريزين":"cetirizine", "لوراتادين":"loratadine", "ديكساميثازون":"dexamethasone",
+  "محلول":"solution", "حقن":"injection injectable", "امبول":"ampoule", "امبولات":"ampoule", "قنينة":"vial bottle",
+  "شراب":"syrup", "اقراص":"tablet tablets", "حبوب":"tablet tablets", "كبسول":"capsule capsules", "كبسولات":"capsule capsules",
+  "مرهم":"ointment", "كريم":"cream", "قطرة":"drops", "قطرات":"drops", "معلق":"suspension", "بودرة":"powder",
+  "مضاد":"antibiotic", "حيوي":"antibiotic", "مسكن":"analgesic painkiller", "مخدر":"anesthetic anaesthetic",
+  "مضاد حيوي":"antibiotic", "ضغط":"blood pressure antihypertensive", "سكري":"diabetes diabetic", "سكر":"glucose sugar",
+  "قثطار":"catheter", "قسطرة":"catheter", "كانيولا":"cannula", "كانيولا وريدية":"iv cannula", "سرنجة":"syringe",
+  "محقنة":"syringe", "ابر":"needle needles", "ابرة":"needle", "شاش":"gauze", "ضماد":"dressing", "ضمادات":"dressings",
+  "قفازات":"gloves", "كفوف":"gloves", "كمامة":"mask", "كمامات":"masks", "خيوط جراحية":"surgical suture sutures",
+  "خيط جراحي":"surgical suture", "شريط":"tape strip", "لاصق":"adhesive tape", "مطهر":"disinfectant antiseptic",
+  "معقم":"sterilizer disinfectant", "تعقيم":"sterilization", "جهاز":"device machine", "عدة":"set kit",
+  "طقم":"set kit", "انبوب":"tube", "انابيب":"tubes", "قناع":"mask", "فلتر":"filter", "مرشح":"filter",
+  "كيس":"bag", "اكياس":"bags", "صمام":"valve", "مشرط":"scalpel", "شفرة":"blade", "ملقط":"forceps",
+  "مقص":"scissors", "حامل":"holder stand", "ميزان":"scale", "ضمادة":"dressing", "مصل":"serum",
+  "دم":"blood", "بول":"urine", "مختبر":"laboratory lab", "فحص":"test assay", "اختبار":"test",
+  "حمل":"pregnancy", "سكر الدم":"blood glucose", "اوكسجين":"oxygen", "أوكسجين":"oxygen",
+  "طبي":"medical", "طبية":"medical", "طبيات":"medical supplies", "مستلزمات":"supplies", "دواء":"drug medicine",
+  "ادوية":"medicines drugs", "مادة":"material item", "مواد":"materials items", "جراحي":"surgical",
+  "جراحية":"surgical", "معقمات":"disinfectants", "وريدي":"intravenous iv", "وريدية":"intravenous iv",
+  "فموي":"oral", "فموية":"oral", "اطفال":"pediatric paediatric", "بالغين":"adult", "عقم":"sterile",
+  "معقم":"sterile disinfectant", "مرة":"single use", "استعمال واحد":"single use disposable"
+};
+function translateArabicQuery(query) {
+  const normalized = norm(query);
+  if (!/[\u0600-\u06ff]/.test(normalized)) return normalized;
+  const tokens = normalized.split(" ").filter(Boolean);
+  const translated = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const pair = i + 1 < tokens.length ? tokens[i] + " " + tokens[i + 1] : "";
+    if (pair && AR_MEDICAL_TERMS[pair]) { translated.push(AR_MEDICAL_TERMS[pair]); i++; continue; }
+    translated.push(AR_MEDICAL_TERMS[tokens[i]] || tokens[i]);
+  }
+  return translated.join(" ");
+}
+
 function search() {
   const query = $("#searchInput").value;
+  const translatedQuery = translateArabicQuery(query);
   const box = $("#results");
   if (!query.trim()) {
     box.innerHTML = '<div class="empty-state"><div class="empty-icon">⌕</div><strong>' +
@@ -366,14 +408,15 @@ function search() {
     const btn = $("#emptyImport"); if (btn) btn.onclick = () => navigate("database");
     return;
   }
-  const hits = state.items.map(item => ({ item, score: scoreItem(item, query) }))
+  const translatedTerms = translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : [];
+  const hits = state.items.map(item => ({ item, score: Math.max(scoreItem(item, query), ...translatedTerms.map(term => scoreItem(item, term))) }))
     .filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0,35);
   if (!hits.length) {
     box.innerHTML = '<div class="empty-state"><strong>ما لقينا تطابقاً واضحاً</strong><p>جرّب الاسم بالإنجليزية أو جزءاً من الاسم أو الرمز الوطني.</p></div>';
     return;
   }
   box.innerHTML = hits.map(({item}) =>
-    '<article class="result-row"><div><div class="result-name">' + esc(item.name) + '</div><div class="result-meta">' +
+    '<article class="result-row"><div><div class="result-name">' + esc(item.name) + '</div>' + (item.nameAr ? '<div class="result-meta"><span>الاسم العربي: ' + esc(item.nameAr) + '</span></div>' : '') + '<div class="result-meta">' +
     '<span class="code">' + esc(item.code || "بدون رمز مسجل") + '</span><span>' + esc(item.unit || "الوحدة غير محددة") +
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
     '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') +
@@ -602,8 +645,8 @@ async function restoreJSON(file) {
   }
 }
 function exportCSV() {
-  const headers = ["اسم المادة","الرمز الوطني","التصنيف","وحدة القياس","الاحتياج السنوي","الأولوية","الملاحظات","نوع المادة","الملف المصدر","الورقة","رقم الصف","يحتاج مراجعة"];
-  const rows = state.items.map(x => [x.name,x.code,x.category,x.unit,x.annual,x.priority,x.note,x.kind === "drug" ? "دواء" : "مستلزم",x.source,x.sheet,x.row,x.review ? "نعم" : "لا"]);
+  const headers = ["اسم المادة بالإنكليزي","اسم المادة بالعربي","الرمز الوطني","التصنيف","وحدة القياس","الاحتياج السنوي","الأولوية","الملاحظات","نوع المادة","الملف المصدر","الورقة","رقم الصف","يحتاج مراجعة"];
+  const rows = state.items.map(x => [x.name,x.nameAr || "",x.code,x.category,x.unit,x.annual,x.priority,x.note,x.kind === "drug" ? "دواء" : "مستلزم",x.source,x.sheet,x.row,x.review ? "نعم" : "لا"]);
   const csv = "\uFEFF" + [headers,...rows].map(row => row.map(v => '"' + String(v ?? "").replace(/"/g,'""') + '"').join(",")).join("\r\n");
   downloadBlob(new Blob([csv], { type:"text/csv;charset=utf-8" }), "haboubi-procurement-materials.csv");
 }
@@ -619,6 +662,38 @@ function navigate(view) {
   if (view === "database") refreshStats();
 }
 $$(".nav").forEach(button => button.onclick = () => navigate(button.dataset.view));
+$("#addMaterialForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const nameAr = clean($("#newMaterialNameAr").value);
+  const name = clean($("#newMaterialName").value);
+  const code = clean($("#newMaterialCode").value);
+  const annual = number($("#newMaterialAnnual").value);
+  const kind = $("#newMaterialKind").value === "drug" ? "drug" : "supply";
+  const unit = clean($("#newMaterialUnit").value);
+  if (!nameAr || !name || !code || annual === null || annual < 0) {
+    toast("أدخل الاسم العربي والإنكليزي والرمز الوطني والاحتياج السنوي الصحيح."); return;
+  }
+  const duplicate = state.items.find(item => norm(item.code) === norm(code) || (norm(item.name) === norm(name) && norm(item.nameAr) === norm(nameAr)));
+  if (duplicate) {
+    toast("المادة أو الرمز موجود مسبقاً: " + duplicate.name + " — " + duplicate.code);
+    return;
+  }
+  const item = {
+    id: Math.max(0, ...state.items.map(x => Number(x.id) || 0)) + 1,
+    name, nameAr, code, annual, needRaw: String(annual), unit, kind,
+    category: kind === "drug" ? "أدوية" : "مستلزمات طبية",
+    priority: "", note: "مضافة يدوياً — يلزم التحقق من المصدر الرسمي", dose: "",
+    source: "إضافة يدوية", sheet: "قاعدة البيانات", row: "",
+    review: true, sources: [{ source: "إضافة يدوية", sheet: "قاعدة البيانات", row: "" }]
+  };
+  state.items.push(item);
+  if (!persistData()) { state.items.pop(); return; }
+  refreshStats(); renderDocItems(); search();
+  $("#addMaterialForm").reset();
+  toast("تمت إضافة المادة وحفظها. تظهر الآن عند البحث بالاسم العربي أو الإنكليزي.");
+  $("#searchInput").value = nameAr;
+  navigate("search"); search();
+});
 $("#searchInput").addEventListener("input", search);
 $("#clearSearch").onclick = () => { $("#searchInput").value = ""; search(); };
 const emptyImportButton = $("#emptyImport"); if (emptyImportButton) emptyImportButton.onclick = () => navigate("database");
