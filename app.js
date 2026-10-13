@@ -389,8 +389,8 @@ function selectItem(id) {
   $("#results").classList.add("hidden");
   const period = item.kind === "drug" ? 3 : 6;
   const divisor = item.kind === "drug" ? 4 : 2;
-  const special = /اعداد|اوزان|patient|حسب وزن|حسب اوزان|حسب أوزان/.test(norm(item.sheet + " " + item.note));
-  const calculated = item.annual === null || special ? null : item.annual / divisor;
+  const special = false;
+  const calculated = item.annual === null ? null : item.annual / divisor;
   const zeroNeed = item.annual === 0;
   $("#selectedPanel").classList.remove("hidden");
   $("#selectedPanel").innerHTML =
@@ -401,16 +401,15 @@ function selectItem(id) {
     field("وحدة القياس", item.unit || "غير محددة") + field("الاحتياج السنوي حسب الملزمة", item.annual === null ? "غير واضح" : fmt(item.annual)) +
     field("مصدر البيانات", (item.source || "") + " · " + (item.sheet || "") + " · صف " + item.row) +
     field("الأولوية", item.priority || "غير محددة") + field("الملاحظات الأصلية", item.note || "لا توجد") +
-    '</div><div class="quantity-area"><label>المدة المحسوبة<input value="' + (special ? "حسب بيانات المرضى" : period + " أشهر") + '" readonly></label>' +
+    '</div><div class="quantity-area">' +
     '<label>الكمية المطلوبة<input id="requestedQty" type="number" min="0" step="any" value="" data-calculated="' + (calculated === null ? "" : calculated) +
     '" placeholder="فارغ = احتياج ' + period + ' أشهر حسب الملزمة"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
     '" placeholder="اختياري"></label></div><div id="qtyWarning">' +
     (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
       (item.annual === null ? "الاحتياج السنوي غير واضح أو غير موجود في الورقة المختارة. " : "") + "تحقق من المصدر قبل الاعتماد.</div>" : "") +
     (zeroNeed ? '<div class="warning">الاحتياج المسجل في الملزمة يساوي صفر؛ لا يعني ذلك تلقائياً عدم الحاجة. راجع المصدر قبل تجهيز مستند رسمي.</div>' : "") +
-    (special ? '<div class="warning">هذه المادة مرتبطة ببيانات المرضى/الأوزان. لا يُطبّق عليها حساب 3 أو 6 أشهر تلقائياً.</div>' : "") +
     '</div><div class="button-row"><button class="primary" id="addToDoc">＋ إضافة للمستند</button>' +
-    '<button class="secondary" id="resetQty">إرجاع الكمية المحسوبة</button></div>';
+    '<button class="secondary" id="resetQty">استخدام الاحتياج التلقائي</button></div>';
   $("#closeSelected").onclick = () => { $("#selectedPanel").classList.add("hidden"); $("#results").classList.remove("hidden"); };
   const addSelectedItem = (qty, force = false) => {
     if (qty === null || qty < 0) { toast(special ? "أدخل العدد حسب بيانات المرضى" : "تعذر حساب الكمية؛ أدخل العدد يدوياً"); return; }
@@ -430,8 +429,8 @@ function selectItem(id) {
       state.documentItems.push({ ...item, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
     }
     renderDocItems(); toast(calculated !== null && qty > calculated ? "أضيفت مع تنبيه: تحتاج موافقة لجنة الصيدلة والعلاج" : "تمت إضافة المادة للمستند");
-    $("#searchInput").value = ""; search(); $("#results").classList.add("hidden");
-    $("#selectedPanel").classList.add("hidden");
+    $("#searchInput").value = ""; search(); $("#results").classList.remove("hidden");
+    $("#selectedPanel").classList.add("hidden"); $("#searchInput").focus();
   };
   $("#addToDoc").onclick = () => {
     const entered = $("#requestedQty").value.trim();
@@ -455,12 +454,11 @@ function checkQty(item, calculated, special) {
   const messages = [];
   if (item.review) messages.push("تحقق من الرمز الوطني والاحتياج قبل الاعتماد.");
   if (item.annual === 0) messages.push("الاحتياج السنوي مسجل بصفر؛ يلزم تأكيده من الملزمة.");
-  if (special) messages.push("الحساب اليدوي مطلوب وفق بيانات المرضى.");
   if (quantity !== null && calculated !== null && quantity > calculated)
     messages.push("الكمية أعلى من الحساب الأولي بمقدار " + fmt(quantity - calculated) + ". راجع الضوابط ووحدة التعبئة.");
   else if (quantity !== null && calculated !== null && quantity <= calculated && !item.review && item.annual !== 0)
     messages.push("الكمية لا تتجاوز الحساب الأولي؛ راجع وحدة التعبئة قبل الاعتماد.");
-  box.innerHTML = messages.map(m => '<div class="warning">' + esc(m) + '</div>').join("");
+  box.innerHTML = messages.filter(m => !m.includes("الحساب اليدوي مطلوب") && !m.includes("بيانات المرضى/الأوزان")).map(m => '<div class="warning">' + esc(m) + '</div>').join("");
 }
 function renderDocItems() {
   const box = $("#documentItems");
