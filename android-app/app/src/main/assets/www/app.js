@@ -386,6 +386,7 @@ function selectItem(id) {
   const item = state.items.find(x => x.id === id);
   if (!item) return;
   state.selected = item;
+  $("#results").classList.add("hidden");
   const period = item.kind === "drug" ? 3 : 6;
   const divisor = item.kind === "drug" ? 4 : 2;
   const special = /اعداد|اوزان|patient|حسب وزن|حسب اوزان|حسب أوزان/.test(norm(item.sheet + " " + item.note));
@@ -401,8 +402,8 @@ function selectItem(id) {
     field("مصدر البيانات", (item.source || "") + " · " + (item.sheet || "") + " · صف " + item.row) +
     field("الأولوية", item.priority || "غير محددة") + field("الملاحظات الأصلية", item.note || "لا توجد") +
     '</div><div class="quantity-area"><label>المدة المحسوبة<input value="' + (special ? "حسب بيانات المرضى" : period + " أشهر") + '" readonly></label>' +
-    '<label>الكمية المطلوبة<input id="requestedQty" type="number" min="0" step="any" value="' + (calculated === null ? "" : calculated) +
-    '" placeholder="أدخل العدد المطلوب"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
+    '<label>الكمية المطلوبة<input id="requestedQty" type="number" min="0" step="any" value="" data-calculated="' + (calculated === null ? "" : calculated) +
+    '" placeholder="فارغ = احتياج ' + period + ' أشهر حسب الملزمة"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
     '" placeholder="اختياري"></label></div><div id="qtyWarning">' +
     (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
       (item.annual === null ? "الاحتياج السنوي غير واضح أو غير موجود في الورقة المختارة. " : "") + "تحقق من المصدر قبل الاعتماد.</div>" : "") +
@@ -410,22 +411,35 @@ function selectItem(id) {
     (special ? '<div class="warning">هذه المادة مرتبطة ببيانات المرضى/الأوزان. لا يُطبّق عليها حساب 3 أو 6 أشهر تلقائياً.</div>' : "") +
     '</div><div class="button-row"><button class="primary" id="addToDoc">＋ إضافة للمستند</button>' +
     '<button class="secondary" id="resetQty">إرجاع الكمية المحسوبة</button></div>';
-  $("#closeSelected").onclick = () => $("#selectedPanel").classList.add("hidden");
-  $("#addToDoc").onclick = () => {
-    const qty = number($("#requestedQty").value);
-    if (qty === null || qty < 0) { toast("أدخل كمية صحيحة"); return; }
-    if (item.review && !confirm("هذه المادة تحتاج مراجعة المصدر. هل تريد إضافتها كمسودة غير معتمدة؟")) return;
+  $("#closeSelected").onclick = () => { $("#selectedPanel").classList.add("hidden"); $("#results").classList.remove("hidden"); };
+  const addSelectedItem = (qty, force = false) => {
+    if (qty === null || qty < 0) { toast(special ? "أدخل العدد حسب بيانات المرضى" : "تعذر حساب الكمية؛ أدخل العدد يدوياً"); return; }
+    if (calculated !== null && qty > calculated && !force) {
+      const warning = $("#qtyWarning");
+      warning.innerHTML = '<div class="warning over-need-warning"><strong>الاحتياج فوق الرسمي ويحتاج إلى لجنة صيدلة وعلاج.</strong><p>الكمية المدخلة: ' + esc(fmt(qty)) + ' — احتياج ' + period + ' أشهر حسب الملزمة: ' + esc(fmt(calculated)) + '.</p><button type="button" class="primary" id="continueOverNeed">متابعة على أي حال</button> <button type="button" class="secondary" id="editOverNeed">تعديل الكمية</button></div>';
+      $("#continueOverNeed").onclick = () => addSelectedItem(qty, true);
+      $("#editOverNeed").onclick = () => $("#requestedQty").focus();
+      return;
+    }
+    if (item.review && !force && !confirm("هذه المادة تحتاج مراجعة المصدر. هل تريد إضافتها كمسودة غير معتمدة؟")) return;
     const existing = state.documentItems.find(x => x.code && norm(x.code) === norm(item.code));
     if (existing) {
-      if (!confirm("المادة أو الرمز موجود بالفعل في المستند. تريد تحديث الكمية إلى " + fmt(qty) + "؟")) return;
+      if (!force && !confirm("المادة أو الرمز موجود بالفعل في المستند. تريد تحديث الكمية إلى " + fmt(qty) + "؟")) return;
       existing.requested = qty; existing.specification = $("#specification").value;
     } else {
-      state.documentItems.push({ ...item, requested: qty, specification: $("#specification").value, expected: calculated, period, special });
+      state.documentItems.push({ ...item, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
     }
-    renderDocItems(); toast("تم تحديث قائمة المستندات");
+    renderDocItems(); toast(calculated !== null && qty > calculated ? "أضيفت مع تنبيه: تحتاج موافقة لجنة الصيدلة والعلاج" : "تمت إضافة المادة للمستند");
+    $("#searchInput").value = ""; search(); $("#results").classList.add("hidden");
+    $("#selectedPanel").classList.add("hidden");
+  };
+  $("#addToDoc").onclick = () => {
+    const entered = $("#requestedQty").value.trim();
+    const qty = entered === "" ? calculated : number(entered);
+    addSelectedItem(qty);
   };
   $("#resetQty").onclick = () => {
-    $("#requestedQty").value = calculated === null ? "" : calculated;
+    $("#requestedQty").value = "";
     checkQty(item, calculated, special);
   };
   $("#requestedQty").oninput = () => checkQty(item, calculated, special);
