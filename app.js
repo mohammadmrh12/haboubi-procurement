@@ -378,7 +378,7 @@ function search() {
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
     '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') +
     '</div></div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
-    '</span><button class="mini-btn" data-item="' + item.id + '">عرض المادة</button></div></article>'
+    '</span><button class="mini-btn" data-item="' + item.id + '">إضافة المادة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
 }
