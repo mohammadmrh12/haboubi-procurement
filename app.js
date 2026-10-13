@@ -610,7 +610,7 @@ $$(".nav").forEach(button => button.onclick = () => navigate(button.dataset.view
 $("#searchInput").addEventListener("input", search);
 $("#clearSearch").onclick = () => { $("#searchInput").value = ""; search(); };
 $("#quickImport").onclick = () => navigate("database");
-$("#emptyImport").onclick = () => navigate("database");
+const emptyImportButton = $("#emptyImport"); if (emptyImportButton) emptyImportButton.onclick = () => navigate("database");
 $("#fileInput").onchange = event => importFiles([...event.target.files]);
 $("#exportData").onclick = exportJSON;
 $("#restoreDataBtn").onclick = () => $("#restoreDataInput").click();
@@ -625,7 +625,7 @@ $("#clearData").onclick = () => {
 };
 $("#saveSettings").onclick = saveSettings;
 $("#settingsBtn").onclick = () => navigate("settings");
-$("#printAuthorization").onclick = () => printDocument("authorization");
-$("#printApology").onclick = () => printDocument("apology");
+const printAuthorizationButton = $("#printAuthorization"); if (printAuthorizationButton) printAuthorizationButton.onclick = () => printDocument("authorization");
+const printApologyButton = $("#printApology"); if (printApologyButton) printApologyButton.onclick = () => printDocument("apology");
 if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
 restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });
