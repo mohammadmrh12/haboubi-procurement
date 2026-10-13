@@ -107,3 +107,12 @@
 @media print{#printArea .auth-page,#printArea .apology-page{font-family:Arial,sans-serif;color:#000;box-sizing:border-box;padding:13mm 12mm;position:relative;direction:rtl}#printArea .auth-page{page-break-after:always;break-after:page}#printArea .apology-page{page-break-after:always;break-after:page}#printArea .doc-meta{display:none}#printArea .letter-head{display:flex;justify-content:space-between;align-items:flex-start;font-weight:bold;line-height:1.8;margin-bottom:18mm}#printArea .letter-recipient{text-align:center;font-weight:bold;margin:8mm 0}#printArea .auth-page h2,#printArea .apology-page h2{text-align:center;margin:6mm 0;font-size:16pt}#printArea .letter-body{font-weight:bold;line-height:2;margin:6mm 0 10mm}#printArea .letter-storekeeper{margin-top:20mm;font-weight:bold}#printArea .letter-director{position:absolute;bottom:17mm;right:15mm;line-height:2.1;font-weight:bold}#printArea .apology-declaration{margin-top:25mm;line-height:2;font-weight:bold}#printArea .apology-sign{position:absolute;bottom:18mm;right:15mm;line-height:2;font-weight:bold}#printArea .auth-page .official-table,#printArea .apology-page .official-table{width:100%;border-collapse:collapse;font-size:10pt}#printArea .auth-page .official-table th,#printArea .auth-page .official-table td,#printArea .apology-page .official-table th,#printArea .apology-page .official-table td{border:1px solid #222;padding:2mm;text-align:center}#printArea .auth-page .official-table td,#printArea .apology-page .official-table td{height:9mm}}
 
 .brand-logo{width:56px;height:56px;object-fit:contain;border-radius:14px;flex-shrink:0}.brand-mark{display:none}
+@media print{
+ #printArea .letter-route{font-weight:700;text-align:center;margin-top:8mm;font-size:13pt}
+ #printArea .apology-recipient{text-align:center;font-weight:700;margin:15mm 0 8mm}
+ #printArea .committee-pair{display:flex;justify-content:space-between;align-items:flex-start;gap:5mm;margin-top:10mm}
+ #printArea .committee-pair .committee{width:49%;margin-top:0;gap:2mm;font-size:9pt}
+ #printArea .committee-pair .committee table{width:100%;margin-top:2mm}
+ #printArea .committee-pair .committee th,#printArea .committee-pair .committee td{font-size:8.5pt;height:9mm;padding:.5mm}
+ #printArea .committee-pair .chair-sign{margin-top:8mm;font-size:8.5pt}
+}
