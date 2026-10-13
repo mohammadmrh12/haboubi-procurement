@@ -267,6 +267,9 @@ function restoreData() {
     const settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}");
     state.settings = settings;
     Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el) el.value = value; });
+    const directorInput = $("#directorName"), pharmacyHeadInput = $("#pharmacyHeadName");
+    if (pharmacyHeadInput && !pharmacyHeadInput.value.trim())
+      pharmacyHeadInput.value = (directorInput && directorInput.value.trim()) || "الدكتور احمد صبحي خضير";
   } catch (error) {
     state.items = []; state.files = [];
   }
@@ -447,7 +450,7 @@ function printDocument(type) {
     (isAuth ? '<div class="signature-row"><div>اسم المخوّل<br><strong>' + esc(name || "................................") +
       '</strong><br>التوقيع: ................</div><div>أمين المخزن<br><strong>' + esc(store || "................................") +
       '</strong><br>التوقيع: ................</div></div>' : '') +
-    (isAuth ? '<div class="director-signature"><strong>' + esc($("#directorName").value || settings.directorName || "الدكتور أحمد صبحي خضير") + '</strong><span>مدير مستشفى الحبوبي التعليمي</span></div>' : '<div class="director-signature"><strong>' + esc($("#pharmacyHeadName").value || settings.pharmacyHeadName || "") + '</strong><span>مدير قسم الصيدلة</span></div>') +
+    (isAuth ? '<div class="director-signature"><strong>' + esc($("#directorName").value.trim() || settings.directorName || "الدكتور احمد صبحي خضير") + '</strong><span>مدير مستشفى الحبوبي التعليمي</span></div>' : '<div class="director-signature"><strong>' + esc($("#pharmacyHeadName").value.trim() || settings.pharmacyHeadName || $("#directorName").value.trim() || settings.directorName || "الدكتور احمد صبحي خضير") + '</strong><span>مدير قسم الصيدلة</span></div>') +
     '<p class="draft-note">مسودة مولدة آلياً للمراجعة — يلزم التحقق من صحة البيانات ومطابقة النموذج قبل التوقيع والاعتماد.</p>';
   view.appendChild(div); window.print();
   setTimeout(() => { div.remove(); view.classList.remove("printing"); }, 600);
@@ -456,7 +459,7 @@ function saveSettings() {
   const settings = {
     hospitalName: $("#hospitalName").value, authRecipient: $("#authRecipient").value,
     apologyRecipient: $("#apologyRecipient").value, directorName: $("#directorName").value,
-    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value
+    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || $("#directorName").value.trim() || "الدكتور احمد صبحي خضير"
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
   toast("تم حفظ الإعدادات على هذا الجهاز");
