@@ -198,7 +198,22 @@ function parseWorkbook(file, workbook) {
   let skipped = 0, sheetsRead = 0;
   for (const sheetName of workbook.SheetNames) {
     const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false });
+    // Excel files sometimes claim the entire 1,048,576-row sheet is used although only a few cells contain data.
+    // Restrict conversion to the last cell that actually has a value to avoid huge memory/time costs.
+    let range = ws["!ref"];
+    if (range) {
+      let maxRow = -1, maxCol = -1;
+      for (const address of Object.keys(ws)) {
+        if (address[0] === "!") continue;
+        const cell = ws[address];
+        if (!cell || cell.v == null || clean(cell.v) === "") continue;
+        const point = XLSX.utils.decode_cell(address);
+        if (point.r > maxRow) maxRow = point.r;
+        if (point.c > maxCol) maxCol = point.c;
+      }
+      if (maxRow >= 0 && maxCol >= 0) range = `A1:${XLSX.utils.encode_cell({ r: maxRow, c: maxCol })}`;
+    }
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, ...(range ? { range } : {}) });
     if (!rows.length) continue;
     const c = detectColumns(rows);
     if (!c) continue;
