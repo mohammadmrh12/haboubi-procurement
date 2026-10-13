@@ -621,7 +621,6 @@ function navigate(view) {
 $$(".nav").forEach(button => button.onclick = () => navigate(button.dataset.view));
 $("#searchInput").addEventListener("input", search);
 $("#clearSearch").onclick = () => { $("#searchInput").value = ""; search(); };
-$("#quickImport").onclick = () => navigate("database");
 const emptyImportButton = $("#emptyImport"); if (emptyImportButton) emptyImportButton.onclick = () => navigate("database");
 $("#fileInput").onchange = event => importFiles([...event.target.files]);
 $("#exportData").onclick = exportJSON;
