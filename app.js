@@ -281,7 +281,8 @@ async function restoreData() {
     if (raw) data = JSON.parse(raw);
   } catch (_) { data = null; }
   const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
-  if (!hasExistingItems) {
+  if (!hasExistingItems && window.HABOUBI_DEFAULT_CATALOG && Array.isArray(window.HABOUBI_DEFAULT_CATALOG.items)) data = window.HABOUBI_DEFAULT_CATALOG;
+  if (!hasExistingItems && !(data && Array.isArray(data.items) && data.items.length)) {
     try {
       const response = await fetch("./catalog-seed.json?rev=20261014", { cache: "no-store" });
       if (!response.ok) throw new Error("تعذر تحميل ملف الملازم: HTTP " + response.status);
