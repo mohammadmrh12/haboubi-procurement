@@ -115,4 +115,6 @@
  #printArea .committee-pair .committee table{width:100%;margin-top:2mm}
  #printArea .committee-pair .committee th,#printArea .committee-pair .committee td{font-size:8.5pt;height:9mm;padding:.5mm}
  #printArea .committee-pair .chair-sign{margin-top:8mm;font-size:8.5pt}
+ #printArea .official-table{width:100%;table-layout:fixed;border-collapse:collapse}
+ #printArea .official-table th,#printArea .official-table td{white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.25}
 }
