@@ -281,15 +281,37 @@ async function restoreData() {
   } catch (_) { data = null; }
   // The embedded catalog is the authoritative default. Use it whenever there is
   // no usable saved catalog; this works offline and inside the Android APK.
+  const embedded = window.HABOUBI_DEFAULT_CATALOG;
   const savedItems = data && Array.isArray(data.items) ? data.items : [];
-  if (!savedItems.length) {
-    const embedded = window.HABOUBI_DEFAULT_CATALOG;
-    if (embedded && Array.isArray(embedded.items) && embedded.items.length) {
-      data = embedded;
-      try { localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: embedded.items, files: embedded.files || [] })); } catch (_) { /* Embedded catalog remains available in memory. */ }
-    } else {
-      console.error("Embedded Haboubi catalog missing or empty.");
-      const status = $("#dbStatus"); if (status) status.textContent = "ملف قاعدة البيانات المدمج غير موجود";
+  if (embedded && Array.isArray(embedded.items) && embedded.items.length) {
+    // Always include every bundled default item, even when this browser already
+    // has an older/partial local database. Keep additional user-imported records.
+    const merged = [...embedded.items];
+    const signature = item => [String(item.code || '').trim().toLowerCase(), String(item.name || '').trim().toLowerCase()].join('|');
+    const seen = new Set(merged.map(signature));
+    for (const item of savedItems) {
+      const key = signature(item);
+      if (!seen.has(key)) { merged.push(item); seen.add(key); }
+    }
+    const fileMap = new Map();
+    for (const file of [...(embedded.files || []), ...((data && data.files) || [])]) {
+      const key = String(file.name || file.source || JSON.stringify(file));
+      if (!fileMap.has(key)) fileMap.set(key, file);
+    }
+    data = { items: merged, files: [...fileMap.values()] };
+    try { localStorage.setItem(STORAGE_DATA, JSON.stringify(data)); } catch (_) { /* Embedded catalog remains available in memory. */ }
+  } else if (!savedItems.length) {
+    // Fallback for a damaged/missing embedded script on the web host.
+    try {
+      const response = await fetch('./catalog-seed.json?v=18', { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const seed = await response.json();
+      if (!Array.isArray(seed.items) || !seed.items.length) throw new Error('Empty catalog');
+      data = seed;
+      try { localStorage.setItem(STORAGE_DATA, JSON.stringify(data)); } catch (_) {}
+    } catch (error) {
+      console.error('Haboubi bundled catalog failed:', error);
+      const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات المدمجة';
       data = { items: [], files: [] };
     }
   }
