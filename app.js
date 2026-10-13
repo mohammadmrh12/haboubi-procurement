@@ -381,7 +381,46 @@ const AR_MEDICAL_TERMS = {
   "ادوية":"medicines drugs", "مادة":"material item", "مواد":"materials items", "جراحي":"surgical",
   "جراحية":"surgical", "معقمات":"disinfectants", "وريدي":"intravenous iv", "وريدية":"intravenous iv",
   "فموي":"oral", "فموية":"oral", "اطفال":"pediatric paediatric", "بالغين":"adult", "عقم":"sterile",
-  "معقم":"sterile disinfectant", "مرة":"single use", "استعمال واحد":"single use disposable"
+  "معقم":"sterile disinfectant",
+  "سرنجة":"syringe", "سرنج":"syringe", "سرنجات":"syringes", "شريجة":"syringe", "شرايج":"syringes",
+  "كانولا":"cannula", "كانيوله":"cannula", "كانيولات":"cannulas", "فراشة":"scalp vein set butterfly needle",
+  "مايكرو درب":"microdrip iv set", "مايكروست":"microdrip infusion set", "مايكرو سيت":"microdrip infusion set",
+  "ماكرو درب":"macrodrip infusion set", "ماكروست":"macrodrip infusion set", "درب":"iv drip infusion set",
+  "دربه":"iv drip infusion set", "دربات":"iv infusion sets", "جهاز اعطاء سوائل":"iv infusion set",
+  "سيت مغذي":"iv infusion set", "كيس ادرار":"urine drainage bag", "كيس ادرار كبار":"adult urine bag",
+  "كيس ادرار اطفال":"pediatric urine bag", "ادرار":"urine urinary", "صونة ادرار":"urine drainage bag",
+  "فولي كاتتر":"foley catheter", "فولي":"foley catheter", "كاتتر":"catheter", "كاتيتر":"catheter",
+  "قثطرة":"catheter", "قثاطر":"catheters", "قسطرة بولية":"urinary catheter", "كوندوم ادرار":"urinary condom catheter",
+  "ردي فاك":"redi-vac drain", "رديڤاك":"redi-vac drain", "لاب سبونج":"lap sponge", "سبونج":"sponge",
+  "فوط بطن":"abdominal swab lap sponge", "شاش كوز":"gauze swabs", "شاش كوز مقطع":"cut gauze swabs",
+  "شاش رول":"gauze roll", "رولة شاش":"gauze roll", "رول شاش":"gauze roll", "لفاف مطاط":"elastic bandage",
+  "بانادج":"bandage", "باندج":"bandage", "بلاستر":"adhesive plaster", "تيب":"medical tape",
+  "قطن":"cotton wool", "قطن طبي":"medical cotton", "قطن كرات":"cotton balls", "كف نيتريل":"nitrile gloves",
+  "كف نتيرال":"nitrile gloves", "كف جراحي":"surgical gloves", "كف فحص":"examination gloves",
+  "كفوف فحص":"examination gloves", "كفوف جراحية":"surgical gloves", "ماسك":"face mask",
+  "مريول":"medical gown", "مريول عمليات":"surgical gown", "قناني":"bottles vials", "فايل":"vial",
+  "فايلات":"vials", "نرمل سلاين":"normal saline", "نورمل سلاين":"normal saline", "ديكستروز":"dextrose",
+  "بوفيدون":"povidone iodine", "سبيرتو":"medical alcohol", "جفنة":"kidney dish", "جفنة كلوية":"kidney dish",
+  "شريطة سكر":"glucose test strip", "ستربات السكر":"glucose test strips", "سترب السكر":"glucose test strip",
+  "لانست":"lancet", "جهاز سكر":"glucometer", "جهاز قياس السكر":"glucometer", "جهاز ضغط":"blood pressure monitor",
+  "اوكسيميتر":"pulse oximeter", "نظارة اوكسجين":"nasal oxygen cannula", "بخاخ ربو":"asthma inhaler",
+  "نيبولايزر":"nebulizer", "نبولايزر":"nebulizer", "ترمومتر":"thermometer", "ثرمومتر":"thermometer",
+  "سماعة طبيب":"stethoscope", "حامل ابر":"needle holder", "طقم غيار":"dressing set",
+  "طقم خياطة":"suturing set", "طقم ولادة":"delivery set", "طقم قثطرة":"catheterization set",
+  "حاوية ابر":"sharps container", "سيفتي بوكس":"safety box sharps container", "كيس نفايات طبية":"medical waste bag",
+  "تيوب سحب دم":"blood collection tube", "تيوب بنفسجي":"purple top edta blood collection tube",
+  "تيوب احمر":"red top blood collection tube", "تيوب ازرق":"blue top blood collection tube",
+  "تيوب اصفر":"yellow top blood collection tube", "تيوب اخضر":"green top blood collection tube",
+  "سلايد":"microscope slide", "كفر سليب":"cover slip", "بيبت":"pipette", "ماصة":"pipette",
+  "وجع راس":"headache", "راس يوجع":"headache", "حرارة":"fever", "خافض حرارة":"antipyretic",
+  "زكام":"common cold", "رشح":"runny nose cold", "كحة":"cough", "بلغم":"sputum",
+  "مغص":"colic abdominal pain", "ترجيع":"vomiting", "استفراغ":"vomiting", "حموضة":"heartburn acidity",
+  "حكة":"itching pruritus", "دوا":"medicine drug", "علاج":"medicine treatment", "علاجات":"medicines",
+  "دهان":"ointment cream", "قطرة عين":"eye drops", "قطرة اذن":"ear drops", "قطرة انف":"nasal drops",
+  "تحميلة":"suppository", "تحاميل":"suppositories", "لبوس":"suppository", "املاح":"electrolytes salts",
+  "محلول املاح":"oral rehydration salts", "اكياس املاح":"oral rehydration salts sachets", "بنج":"anesthetic",
+  "بنج موضعي":"local anesthetic", "ابر تخدير":"anesthetic needles",
+  "مرة":"single use", "استعمال واحد":"single use disposable"
 };
 function translateArabicQuery(query) {
   const normalized = norm(query);
@@ -389,7 +428,9 @@ function translateArabicQuery(query) {
   const tokens = normalized.split(" ").filter(Boolean);
   const translated = [];
   for (let i = 0; i < tokens.length; i++) {
+    const triple = i + 2 < tokens.length ? tokens.slice(i, i + 3).join(" ") : "";
     const pair = i + 1 < tokens.length ? tokens[i] + " " + tokens[i + 1] : "";
+    if (triple && AR_MEDICAL_TERMS[triple]) { translated.push(AR_MEDICAL_TERMS[triple]); i += 2; continue; }
     if (pair && AR_MEDICAL_TERMS[pair]) { translated.push(AR_MEDICAL_TERMS[pair]); i++; continue; }
     translated.push(AR_MEDICAL_TERMS[tokens[i]] || tokens[i]);
   }
