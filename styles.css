@@ -117,6 +117,12 @@
  #printArea .committee-pair .chair-sign{margin-top:8mm;font-size:8.5pt}
  #printArea .official-table{width:100%;table-layout:fixed;border-collapse:collapse}
  #printArea .official-table th,#printArea .official-table td{white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.25}
+ #printArea .official-table th:nth-child(1),#printArea .official-table td:nth-child(1){width:6%}
+ #printArea .official-table th:nth-child(2),#printArea .official-table td:nth-child(2){width:48%}
+ #printArea .official-table th:nth-child(3),#printArea .official-table td:nth-child(3){width:14%}
+ #printArea .official-table th:nth-child(4),#printArea .official-table td:nth-child(4){width:10%}
+ #printArea .official-table td.name{text-align:right;padding-right:2mm;padding-left:2mm}
+ #printArea .date-year-left{direction:ltr;unicode-bidi:isolate;display:inline-block;white-space:nowrap}
  #printArea .auth-page .official-table th:nth-child(1),#printArea .auth-page .official-table td:nth-child(1){width:6%}
  #printArea .auth-page .official-table th:nth-child(2),#printArea .auth-page .official-table td:nth-child(2){width:49%}
  #printArea .auth-page .official-table th:nth-child(3),#printArea .auth-page .official-table td:nth-child(3){width:15%}
