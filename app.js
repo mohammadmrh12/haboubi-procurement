@@ -4,7 +4,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 const state = { items: [], files: [], selected: null, documentItems: [], settings: {} };
 const pages = {
   search: ["البحث عن مادة", "ابحث بالاسم العلمي أو الوصف أو الرمز الوطني، ثم راجع الاحتياج قبل إنشاء المستند."],
-  documents: ["إنشاء المستندات", "جهّز مسودة التخويل أو الاعتذار من المواد التي اخترتها."],
+  documents: ["التخويل والاعتذار", "جهّز مسودتي التخويل والاعتذار واطبعهما معاً."],
+  procurement: ["استمارات المشتريات", "نماذج مراحل الشراء الحكومية من طلب الشراء إلى المورد وقسم العقود."],
   database: ["قاعدة البيانات", "استيراد ملازم 2026 ومراجعة سلامة البيانات ومصادرها."],
   settings: ["الإعدادات", "تخصيص معلومات الجهة والمستندات."]
 };
@@ -276,9 +277,10 @@ async function restoreData() {
   try {
     let raw = localStorage.getItem(STORAGE_DATA);
     if (!raw) raw = localStorage.getItem("haboubiData");
-    let data;
-    if (!raw) {
-      // Seed the local browser database only when no data exists; never overwrite an existing user database.
+    let data = raw ? JSON.parse(raw) : null;
+    const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
+    // A previously saved but empty database is also eligible for first-launch seeding.
+    if (!hasExistingItems) {
       try {
         const response = await fetch("./data/private/haboubi-procurement-backup.json", { cache: "no-store" });
         if (response.ok) {
@@ -290,7 +292,7 @@ async function restoreData() {
         }
       } catch (_) { /* Seed is optional; normal empty-state behavior remains available. */ }
     }
-    if (!data) data = JSON.parse(raw || "{}");
+    if (!data) data = {};
     state.items = Array.isArray(data.items) ? data.items : [];
     state.files = Array.isArray(data.files) ? data.files : [];
     const settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}");

@@ -12,9 +12,9 @@
 .doc-table th{background:#f5f8f6;color:#52685e;font-size:11px}
 .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:850px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@page{size:A4 portrait;margin:12mm}
+@page{size:A4 portrait;margin:0}
 @media print{
-  .print-sheet{padding:0;direction:rtl;font-family:"Cairo",Arial,sans-serif;font-size:12px;line-height:1.8}
+  .print-sheet{padding:12mm;direction:rtl;font-family:"Cairo",Arial,sans-serif;font-size:12px;line-height:1.8;break-after:page;page-break-after:always}\n  #printArea,#procurementPrintArea{display:block!important}\n  .view.printing #printArea,.view.printing #procurementPrintArea{display:block!important}\n  .print-sheet:last-child{break-after:auto;page-break-after:auto}
   .official-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:3px double #333;padding-bottom:12px;margin-bottom:24px}
   .ministry{display:flex;flex-direction:column;gap:2px;text-align:right}
   .ministry strong{font-size:17px}
