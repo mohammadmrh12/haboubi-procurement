@@ -283,7 +283,7 @@ async function restoreData() {
   const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
   if (!hasExistingItems) {
     try {
-      const response = await fetch("./data/private/haboubi-procurement-backup.json?rev=20261013", { cache: "no-store" });
+      const response = await fetch("./catalog-seed.json?rev=20261014", { cache: "no-store" });
       if (!response.ok) throw new Error("تعذر تحميل ملف الملازم: HTTP " + response.status);
       const seed = await response.json();
       if (!Array.isArray(seed.items) || !Array.isArray(seed.files) || !seed.items.length) throw new Error("ملف الملازم فارغ أو غير صالح");
