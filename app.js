@@ -484,6 +484,7 @@ function printDocument(type) {
   const title = isAuth ? "تخويل" : "م / اعتذار";
   const recipient = isAuth ? ($("#authRecipient").value || settings.authRecipient) : ($("#apologyRecipient").value || settings.apologyRecipient);
   const name = $("#authorizedName").value.trim();
+  const store = $("#storekeeperName").value.trim();
   const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
   const numberLetter = $("#letterNo").value.trim();
   const rows = state.documentItems.map((item,i) =>
