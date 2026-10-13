@@ -267,9 +267,12 @@ function restoreData() {
     const settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}");
     state.settings = settings;
     Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el) el.value = value; });
-    const directorInput = $("#directorName"), pharmacyHeadInput = $("#pharmacyHeadName");
-    if (pharmacyHeadInput && !pharmacyHeadInput.value.trim())
-      pharmacyHeadInput.value = (directorInput && directorInput.value.trim()) || "الدكتور احمد صبحي خضير";
+    const pharmacyHeadInput = $("#pharmacyHeadName");
+    if (pharmacyHeadInput && (!pharmacyHeadInput.value.trim() || pharmacyHeadInput.value.trim() === "الدكتور احمد صبحي خضير")) {
+      pharmacyHeadInput.value = "علي شكري العبادي";
+      state.settings.pharmacyHeadName = "علي شكري العبادي";
+      localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(state.settings));
+    }
   } catch (error) {
     state.items = []; state.files = [];
   }
