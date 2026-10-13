@@ -272,11 +272,25 @@ function persistData() {
     return false;
   }
 }
-function restoreData() {
+async function restoreData() {
   try {
     let raw = localStorage.getItem(STORAGE_DATA);
     if (!raw) raw = localStorage.getItem("haboubiData");
-    const data = JSON.parse(raw || "{}");
+    let data;
+    if (!raw) {
+      // Seed the local browser database only when no data exists; never overwrite an existing user database.
+      try {
+        const response = await fetch("./data/private/haboubi-procurement-backup.json", { cache: "no-store" });
+        if (response.ok) {
+          const seed = await response.json();
+          if (Array.isArray(seed.items) && Array.isArray(seed.files) && seed.items.length) {
+            data = seed;
+            localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: seed.items, files: seed.files }));
+          }
+        }
+      } catch (_) { /* Seed is optional; normal empty-state behavior remains available. */ }
+    }
+    if (!data) data = JSON.parse(raw || "{}");
     state.items = Array.isArray(data.items) ? data.items : [];
     state.files = Array.isArray(data.files) ? data.files : [];
     const settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}");
@@ -597,4 +611,4 @@ $("#settingsBtn").onclick = () => navigate("settings");
 $("#printAuthorization").onclick = () => printDocument("authorization");
 $("#printApology").onclick = () => printDocument("apology");
 $("#letterDate").value = new Date().toISOString().slice(0,10);
-restoreData(); search();
+restoreData().finally(() => search());
