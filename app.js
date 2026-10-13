@@ -459,7 +459,7 @@ function saveSettings() {
   const settings = {
     hospitalName: $("#hospitalName").value, authRecipient: $("#authRecipient").value,
     apologyRecipient: $("#apologyRecipient").value, directorName: $("#directorName").value,
-    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || $("#directorName").value.trim() || "الدكتور احمد صبحي خضير"
+    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي"
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
   toast("تم حفظ الإعدادات على هذا الجهاز");
