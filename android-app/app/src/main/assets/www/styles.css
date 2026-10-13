@@ -58,7 +58,7 @@
   .official-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0!important;font-size:10pt;direction:rtl}
   .official-table th,.official-table td{border:1px solid #666;padding:1mm 1.2mm;text-align:center;vertical-align:middle;font-size:10pt;height:7.3mm;line-height:1.2;background:#fff!important;color:#111}
   .official-table th{font-weight:700}
-  .official-table .n{width:7%}.official-table .name{width:32%;text-align:right;padding-right:2mm}.official-table .qty{width:20%}.official-table .note{width:33%}.official-table .spec{width:23%}.official-table .cost{width:24%}
+  .official-table .n{width:7%}.official-table .name{width:28%;text-align:right;padding-right:2mm}.official-table .qty{width:20%}.official-table .note{width:45%}.official-table .spec{width:23%}.official-table .cost{width:24%}
   .purchase-page .sign-row{display:flex;justify-content:space-between;margin:8mm 0 14mm;font-size:10pt}
   .purchase-page .step-lower{margin-top:0;margin-bottom:3mm}
   .stock-box{border:1px solid #666;height:76mm;padding:5mm 4mm;position:relative;font-size:11pt}
@@ -67,7 +67,7 @@
   .cost-page{padding-top:12mm}
   .cost-page .step{margin-bottom:3mm}.cost-page .cost-title{font-size:15pt;margin-bottom:3mm}.cost-page .intro{font-size:10pt;line-height:1.6;margin:0 0 4mm}
   .cost-page .official-table th,.cost-page .official-table td{height:10mm;font-size:9.5pt;padding:.7mm}
-  .cost-page .official-table .name{width:27%}.cost-page .official-table .qty{width:16%}.cost-page .official-table .spec{width:17%}.cost-page .official-table .cost{width:27%}
+  .cost-page .official-table .name{width:28%}.cost-page .official-table .qty{width:16%}.cost-page .official-table .spec{width:17%}.cost-page .official-table .cost{width:32%}
   .committee{margin-top:20mm;display:flex;flex-direction:column;align-items:flex-end;gap:2mm;font-size:10pt}
   .committee table{width:60%;border-collapse:collapse;margin-top:2mm}.committee th,.committee td{border:1px solid #666;height:10mm;text-align:center;padding:1mm}.committee .chair-sign{margin-top:13mm}
   .blank-finance-page{padding:16mm 19mm}
@@ -81,7 +81,7 @@
   .supplier-meta{margin:0 0 20mm!important}
   .supplier-title{text-align:center;font-size:17pt;line-height:1.2;margin:0 0 5mm}
   .supplier-page .official-table th,.supplier-page .official-table td{height:7.7mm}
-  .supplier-page .official-table .name{width:33%}.supplier-page .official-table .spec{width:18%}.supplier-page .official-table .qty{width:16%}.supplier-page .official-table .note{width:28%}
+  .supplier-page .official-table .name{width:31%}.supplier-page .official-table .spec{width:18%}.supplier-page .official-table .qty{width:15%}.supplier-page .official-table .note{width:29%}
   .supplier-sign{margin:18mm 0 10mm 0;text-align:left;font-weight:700}
   .rules{font-size:10pt;line-height:1.8}.rules p{margin:2mm 0}
   .final-blank-page{padding:12mm 7mm}
