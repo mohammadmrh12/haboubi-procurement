@@ -275,13 +275,18 @@ function persistData() {
 }
 async function restoreData() {
   let data = null;
+  const showBootStatus = message => { const status = $('#dbStatus'); if (status) status.textContent = message; const results = $('#results'); if (results && !state.items.length) results.innerHTML = '<div class="empty-state"><strong>' + message + '</strong><p>أعد تحميل الصفحة. إذا استمرت المشكلة أرسل لقطة شاشة من تبويب قاعدة البيانات.</p></div>'; };
+  showBootStatus('جارٍ تحميل قاعدة البيانات المدمجة…');
   try {
     const raw = localStorage.getItem(STORAGE_DATA) || localStorage.getItem("haboubiData");
     if (raw) data = JSON.parse(raw);
   } catch (_) { data = null; }
   // The embedded catalog is the authoritative default. Use it whenever there is
   // no usable saved catalog; this works offline and inside the Android APK.
-  const embedded = window.HABOUBI_DEFAULT_CATALOG;
+  let embedded = window.HABOUBI_DEFAULT_CATALOG;
+  if (!embedded || !Array.isArray(embedded.items) || !embedded.items.length) {
+    try { const response = await fetch('./catalog-seed.json?v=20', { cache: 'no-store' }); if (response.ok) embedded = await response.json(); } catch (_) {}
+  }
   const savedItems = data && Array.isArray(data.items) ? data.items : [];
   if (embedded && Array.isArray(embedded.items) && embedded.items.length) {
     // Always include every bundled default item, even when this browser already
@@ -301,19 +306,8 @@ async function restoreData() {
     data = { items: merged, files: [...fileMap.values()] };
     try { localStorage.setItem(STORAGE_DATA, JSON.stringify(data)); } catch (_) { /* Embedded catalog remains available in memory. */ }
   } else if (!savedItems.length) {
-    // Fallback for a damaged/missing embedded script on the web host.
-    try {
-      const response = await fetch('./catalog-seed.json?v=18', { cache: 'no-store' });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      const seed = await response.json();
-      if (!Array.isArray(seed.items) || !seed.items.length) throw new Error('Empty catalog');
-      data = seed;
-      try { localStorage.setItem(STORAGE_DATA, JSON.stringify(data)); } catch (_) {}
-    } catch (error) {
-      console.error('Haboubi bundled catalog failed:', error);
-      const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات المدمجة';
-      data = { items: [], files: [] };
-    }
+    console.error('Haboubi bundled catalog missing or empty.');
+    data = { items: [], files: [] };
   }
   state.items = Array.isArray(data.items) ? data.items : [];
   state.files = Array.isArray(data.files) ? data.files : [];
@@ -329,6 +323,7 @@ async function restoreData() {
   }
   state.items = state.items.map((item,index) => ({ ...item, id: index + 1, sources: item.sources || [{ source:item.source, sheet:item.sheet, row:item.row }] }));
   renderDocItems(); refreshStats();
+  if (state.items.length) { const results = $('#results'); if (results && !$('#searchInput').value.trim()) results.innerHTML = '<div class="empty-state"><div class="empty-icon">⌕</div><strong>قاعدة البيانات جاهزة</strong><p>تم تحميل ' + fmt(state.items.length) + ' مادة. اكتب اسم المادة أو الرمز الوطني للبحث.</p></div>'; }
 }
 
 function scoreItem(item, query) {
@@ -633,4 +628,4 @@ $("#settingsBtn").onclick = () => navigate("settings");
 $("#printAuthorization").onclick = () => printDocument("authorization");
 $("#printApology").onclick = () => printDocument("apology");
 if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
-restoreData().finally(() => search());
+restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });

@@ -1,5 +1,5 @@
-const CACHE_NAME = "haboubi-procurement-v19";
-const ASSETS = ["./","./index.html","./styles.css","./catalog-seed.js","./app.js","./forms-addon.js","./manifest.json","./vendor/xlsx.full.min.js"];
+const CACHE_NAME = "haboubi-procurement-v20";
+const ASSETS = ["./","./index.html","./styles.css","./app.js","./forms-addon.js","./manifest.json","./vendor/xlsx.full.min.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
