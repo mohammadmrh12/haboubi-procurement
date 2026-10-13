@@ -486,7 +486,6 @@ function printDocument(type) {
   const name = $("#authorizedName").value.trim();
   const store = $("#storekeeperName").value.trim();
   const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
-  const numberLetter = $("#letterNo").value.trim();
   const rows = state.documentItems.map((item,i) =>
     '<tr><td>' + (i+1) + '</td><td>' + esc(item.name) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
     '</td><td>' + fmt(item.requested) + '</td>' + (isAuth ? '<td>يُستكمل من الجهة المختصة</td>' : '') + '</tr>'
@@ -505,7 +504,7 @@ function printDocument(type) {
   const div = document.createElement("div"); div.id = "printArea"; div.className = "print-sheet";
   div.innerHTML = '<div class="official-header">' +
     '<div class="ministry"><strong>' + (isAuth ? "وزارة الصحة" : "محافظة ذي قار") + '</strong><span>دائرة صحة محافظة ذي قار</span>' + (isAuth ? '<span>' + esc($("#hospitalName").value || settings.hospitalName || "مستشفى الحبوبي التعليمي") + '</span>' : '<span>قسم الصيدلة</span>') + '</div>' +
-    '<div class="letter-meta"><span>العدد: ' + esc(numberLetter || "................") + '</span><span>التاريخ: ' + esc(date) + '</span></div></div>' +
+    '<div class="letter-meta"><span>العدد: ................</span><span>التاريخ: ' + esc(date) + '</span></div></div>' +
     '<div class="recipient">إلى / ' + esc(recipient) + '</div><h2 class="print-title">' + title + '</h2>' + bodyText +
     '<table><thead><tr><th>ت</th><th>اسم المادة</th><th>الرمز الوطني</th><th>العدد</th>' + (isAuth ? '<th>بيان توفر المادة</th>' : '') +
     '</tr></thead><tbody>' + rows + '</tbody></table>' + declaration +
