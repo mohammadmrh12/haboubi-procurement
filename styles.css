@@ -41,3 +41,5 @@
 }
 
 @media print{.view.printing .card,.view.printing #view-documents>.card{display:none!important}.form-date{margin:0}.step-title{text-align:center;margin:20px 0 5px}.finance-sign{margin-top:45px}.rules-note{font-size:10px;line-height:1.8}.print-sheet{break-inside:avoid}}
+
+.packet-title{font-size:20px;text-align:center;margin:0 0 18px;border-bottom:2px solid #333;padding-bottom:10px}

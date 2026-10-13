@@ -49,3 +49,5 @@ button,.primary,.secondary,.danger-ghost,.mini-btn,.icon-btn{line-height:1.5;min
 @media(max-width:430px){.nav{font-size:10px;padding:4px 1px}.nav span{font-size:18px}.primary,.secondary,.danger-ghost{white-space:normal;min-width:0;padding:9px 12px}.button-row>*{max-width:100%}.topbar{gap:8px}.top-actions{min-width:0}.brand{min-width:0}.brand strong,.brand small{overflow-wrap:anywhere}}
 
 @media print{.view.printing .card,.view.printing #view-documents>.card{display:none!important}.form-date{margin:0}.step-title{text-align:center;margin:20px 0 5px}.finance-sign{margin-top:45px}.rules-note{font-size:10px;line-height:1.8}.print-sheet{break-inside:avoid}}
+
+.packet-title{font-size:20px;text-align:center;margin:0 0 18px;border-bottom:2px solid #333;padding-bottom:10px}

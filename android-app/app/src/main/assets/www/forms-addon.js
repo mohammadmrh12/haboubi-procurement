@@ -8,6 +8,7 @@ const dateLine=()=>'<p class="form-date" dir="rtl">التاريخ: '+year()+' /�
 const sheet=(title,body)=>'<section class="print-sheet"><header class="official-header"><div class="ministry"><strong>وزارة الصحة</strong><span>دائرة صحة محافظة ذي قار</span><span>مستشفى الحبوبي التعليمي</span></div><div class="letter-meta"><span>العدد: '+esc(val('letterNo')||'................')+'</span>'+dateLine()+'</div></header>'+body+'</section>';
 const head=t=>'<h2 class="print-title">'+t+'</h2>';
 const rows=data=>data.map(x=>[x.n,x.name,x.qty]);
+const startPrint=(viewId,areaId,html)=>{const view=$('#'+viewId);if(!view)return;view.classList.add('printing');const old=$('#'+areaId);if(old)old.remove();const area=document.createElement('div');area.id=areaId;area.innerHTML='<section class="print-sheet"><h1 class="print-title packet-title">التخويل والاعتذار — استمارة الشراء</h1></section>'+html;view.appendChild(area);requestAnimationFrame(()=>{window.print();setTimeout(()=>{area.remove();view.classList.remove('printing')},1200)});};
 const procurementPacket=data=>{
  const blanks=data.map(x=>[x.n,x.name,x.qty,'','']);
  const pages=[];
@@ -17,7 +18,7 @@ const procurementPacket=data=>{
  pages.push(sheet('قائمة طلب الشراء إلى المورد', '<p>رقم الاستمارة: ........................　　تاريخ طلب الشراء: '+year()+' /　　/　　</p><p>اسم الوزارة أو التشكيل: مستشفى الحبوبي التعليمي</p><p>مكان التسليم بشكل دقيق: مستشفى الحبوبي التعليمي / ذي قار</p>'+head('إلى المورد / قائمة طلب الشراء')+table(['ت','اسم المادة','المواصفة','الكمية','الملاحظات'],data.map(x=>[x.n,x.name,'........................',x.qty,'']))+'<p>توقيع لجنة المشتريات: ........................................................</p><p class="rules-note">يرسل هذا الطلب إلى إيميل التاجر موقعاً من رئيس لجنة المشتريات ومثبتاً عليه رقم الاستمارة، مع نسخة إلى بريد المنصة PO@ITP.IQ. على المورد بيان خدمة التوصيل وخدمة استبدال التالف ورفع هوية غرفة التجارة إن وجدت.</p>'));
  return pages.join('');
 };
-$('#printBoth').textContent='معاينة وطباعة التخويل والاعتذار واستمارات المشتريات';
+$('#printBoth').textContent='معاينة وطباعة';
 $('#printBoth').onclick=()=>{
  const data=items(); if(!data.length){alert('أضف مادة واحدة على الأقل من البحث أولاً');return}
  const auth=sheet('تخويل','<p>إلى // دائرة صحة ذي قار // قسم الصيدلة</p>'+head('تخويل')+'<p class="document-body">نرسل إليكم مخوّلنا ( <strong>'+esc(val('authorizedName')||'................')+'</strong> ) لاستلام حصتنا من الأدوية والمستلزمات الطبية.</p><p>هذا ولكم الأمر مع التقدير...</p>'+table(['ت','اسم المادة','الرمز الوطني','العدد','بيان توفر المادة'],data.map(x=>[x.n,x.name,x.code,x.qty,'']))+'<div class="director-signature"><strong>الدكتور احمد صبحي خضير</strong><span>مدير مستشفى الحبوبي التعليمي</span></div>');
