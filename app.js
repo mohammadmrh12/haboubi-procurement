@@ -461,7 +461,7 @@ function printDocument(type) {
   const title = isAuth ? "تخويل" : "م / اعتذار";
   const recipient = isAuth ? ($("#authRecipient").value || settings.authRecipient) : ($("#apologyRecipient").value || settings.apologyRecipient);
   const name = $("#authorizedName").value.trim();
-  const date = $("#letterDate").value || new Date().toISOString().slice(0,10);
+  const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
   const numberLetter = $("#letterNo").value.trim();
   const rows = state.documentItems.map((item,i) =>
     '<tr><td>' + (i+1) + '</td><td>' + esc(item.name) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
@@ -616,5 +616,5 @@ $("#saveSettings").onclick = saveSettings;
 $("#settingsBtn").onclick = () => navigate("settings");
 $("#printAuthorization").onclick = () => printDocument("authorization");
 $("#printApology").onclick = () => printDocument("apology");
-$("#letterDate").value = "";
+if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
 restoreData().finally(() => search());

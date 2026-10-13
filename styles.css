@@ -14,7 +14,11 @@
 @media(max-width:850px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @page{size:A4 portrait;margin:0}
 @media print{
-  .print-sheet{padding:12mm;direction:rtl;font-family:"Cairo",Arial,sans-serif;font-size:12px;line-height:1.8;break-after:page;page-break-after:always}\n  #printArea,#procurementPrintArea{display:block!important}\n  .view.printing #printArea,.view.printing #procurementPrintArea{display:block!important}\n  .print-sheet:last-child{break-after:auto;page-break-after:auto}
+  .view.printing > *:not(#printArea):not(#procurementPrintArea){display:none!important}
+  #printArea,#procurementPrintArea{display:block!important}
+  .view.printing #printArea,.view.printing #procurementPrintArea{display:block!important}
+  .print-sheet{padding:12mm;direction:rtl;font-family:"Cairo",Arial,sans-serif;font-size:12px;line-height:1.8;break-after:page;page-break-after:always}
+  .print-sheet:last-child{break-after:auto;page-break-after:auto}
   .official-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:3px double #333;padding-bottom:12px;margin-bottom:24px}
   .ministry{display:flex;flex-direction:column;gap:2px;text-align:right}
   .ministry strong{font-size:17px}
@@ -35,3 +39,5 @@
   .director-signature{display:flex;flex-direction:column;align-items:flex-end;margin-top:50px;line-height:2}
   .draft-note{font-size:9px;color:#666;border-top:1px solid #bbb;margin-top:30px;padding-top:7px}
 }
+
+@media print{.view.printing .card,.view.printing #view-documents>.card{display:none!important}.form-date{margin:0}.step-title{text-align:center;margin:20px 0 5px}.finance-sign{margin-top:45px}.rules-note{font-size:10px;line-height:1.8}.print-sheet{break-inside:avoid}}
