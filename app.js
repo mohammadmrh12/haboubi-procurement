@@ -274,38 +274,38 @@ function persistData() {
   }
 }
 async function restoreData() {
+  let data = null;
+  // Safari/private browsing may block localStorage; the catalog must still load into memory.
   try {
-    let raw = localStorage.getItem(STORAGE_DATA);
-    if (!raw) raw = localStorage.getItem("haboubiData");
-    let data = raw ? JSON.parse(raw) : null;
-    const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
-    // A previously saved but empty database is also eligible for first-launch seeding.
-    if (!hasExistingItems) {
-      try {
-        const response = await fetch("./data/private/haboubi-procurement-backup.json", { cache: "no-store" });
-        if (response.ok) {
-          const seed = await response.json();
-          if (Array.isArray(seed.items) && Array.isArray(seed.files) && seed.items.length) {
-            data = seed;
-            localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: seed.items, files: seed.files }));
-          }
-        }
-      } catch (_) { /* Seed is optional; normal empty-state behavior remains available. */ }
+    const raw = localStorage.getItem(STORAGE_DATA) || localStorage.getItem("haboubiData");
+    if (raw) data = JSON.parse(raw);
+  } catch (_) { data = null; }
+  const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
+  if (!hasExistingItems) {
+    try {
+      const response = await fetch("./data/private/haboubi-procurement-backup.json?rev=20261013", { cache: "no-store" });
+      if (!response.ok) throw new Error("تعذر تحميل ملف الملازم: HTTP " + response.status);
+      const seed = await response.json();
+      if (!Array.isArray(seed.items) || !Array.isArray(seed.files) || !seed.items.length) throw new Error("ملف الملازم فارغ أو غير صالح");
+      data = seed;
+      try { localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: seed.items, files: seed.files })); } catch (_) { /* Keep the loaded catalog in memory if browser storage is unavailable. */ }
+    } catch (error) {
+      console.error("Haboubi catalog load failed:", error);
+      const status = $("#dbStatus"); if (status) status.textContent = "تعذر تحميل الملازم — افتح قاعدة البيانات وحاول مجدداً";
     }
-    if (!data) data = {};
-    state.items = Array.isArray(data.items) ? data.items : [];
-    state.files = Array.isArray(data.files) ? data.files : [];
-    const settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}");
-    state.settings = settings;
-    Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el) el.value = value; });
-    const pharmacyHeadInput = $("#pharmacyHeadName");
-    if (pharmacyHeadInput && (!pharmacyHeadInput.value.trim() || pharmacyHeadInput.value.trim() === "الدكتور احمد صبحي خضير")) {
-      pharmacyHeadInput.value = "علي شكري العبادي";
-      state.settings.pharmacyHeadName = "علي شكري العبادي";
-      localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(state.settings));
-    }
-  } catch (error) {
-    state.items = []; state.files = [];
+  }
+  if (!data) data = {};
+  state.items = Array.isArray(data.items) ? data.items : [];
+  state.files = Array.isArray(data.files) ? data.files : [];
+  let settings = {};
+  try { settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch (_) {}
+  state.settings = settings;
+  Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el) el.value = value; });
+  const pharmacyHeadInput = $("#pharmacyHeadName");
+  if (pharmacyHeadInput && (!pharmacyHeadInput.value.trim() || pharmacyHeadInput.value.trim() === "الدكتور احمد صبحي خضير")) {
+    pharmacyHeadInput.value = "علي شكري العبادي";
+    state.settings.pharmacyHeadName = "علي شكري العبادي";
+    try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(state.settings)); } catch (_) {}
   }
   state.items = state.items.map((item,index) => ({ ...item, id: index + 1, sources: item.sources || [{ source:item.source, sheet:item.sheet, row:item.row }] }));
   renderDocItems(); refreshStats();
