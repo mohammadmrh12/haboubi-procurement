@@ -420,7 +420,29 @@ const AR_MEDICAL_TERMS = {
   "تحميلة":"suppository", "تحاميل":"suppositories", "لبوس":"suppository", "املاح":"electrolytes salts",
   "محلول املاح":"oral rehydration salts", "اكياس املاح":"oral rehydration salts sachets", "بنج":"anesthetic",
   "بنج موضعي":"local anesthetic", "ابر تخدير":"anesthetic needles",
-  "مرة":"single use", "استعمال واحد":"single use disposable"
+  "مرة":"single use", "استعمال واحد":"single use disposable",
+  "شلفة":"surgical blade scalpel blade", "شلفه":"surgical blade scalpel blade", "شلفات":"surgical blades",
+  "براسيتول":"paracetamol acetaminophen", "باراسيتول":"paracetamol acetaminophen",
+  "باندج":"bandage", "ملحف طفل":"baby sheet infant sheet", "ملحف":"bed sheet bedsheet",
+  "جرجف":"bed sheet bedsheet medical bed cover", "جرجف سدية":"bed sheet fitted sheet",
+  "شرشف سرير":"bed sheet bedsheet", "شرشف":"bed sheet", "شرشف طبي":"medical bed sheet",
+  "سوار طفل":"infant identification wristband baby id band", "سوار المولود":"newborn identification wristband",
+  "سوار مولود":"newborn identification wristband", "سوار ام":"mother identification wristband maternity id band",
+  "سوار الام":"mother identification wristband maternity id band", "اسورة طفل":"infant identification wristband",
+  "اسوارة طفل":"infant identification wristband", "اسورة ام":"mother identification wristband",
+  "اسوارة ام":"mother identification wristband", "سوار هوية طفل":"infant identification wristband",
+  "كاون":"surgical gown medical gown", "كاون طبي":"medical gown surgical gown", "كاون عمليات":"surgical gown",
+  "كاون معقم":"sterile surgical gown", "كاون دسبوزبل":"disposable gown", "جاون":"gown",
+  "جاون عمليات":"surgical gown", "هيد كب":"head cover surgical cap", "هيد كاب":"head cover surgical cap",
+  "كاب راس":"head cover surgical cap", "كب راس":"head cover surgical cap", "غطاء راس":"head cover",
+  "غطاء رأس":"head cover", "قبعة عمليات":"surgical cap", "كاب عمليات":"surgical cap",
+  "كفر شوز":"shoe cover shoes cover", "شوز كفر":"shoe cover shoes cover", "غطاء حذاء":"shoe cover",
+  "غطاء احذية":"shoe covers", "كفر احذية":"shoe covers", "كفر شوز نايلون":"plastic shoe covers",
+  "كفر شوز قماش":"cloth shoe covers", "كفر شوز بلاستيك":"plastic shoe covers",
+  "كفر شوز دسبوزبل":"disposable shoe covers", "غطاء قدم":"shoe cover foot cover",
+  "وجه مخدة":"pillow case pillow cover", "كيس مخدة":"pillow case", "مفرش سرير":"bed sheet bed cover",
+  "غطاء سرير":"bed cover bed sheet", "ملحف مستشفى":"hospital bed sheet", "شرشف لاستيك":"fitted bed sheet",
+  "شرشف مطاط":"fitted bed sheet", "غطاء مرتبة":"mattress cover", "ملاءة سرير":"bed sheet"
 };
 function translateArabicQuery(query) {
   const normalized = norm(query);
