@@ -506,6 +506,37 @@ function exportJSON() {
   const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), items: state.items, files: state.files }, null, 2)], { type: "application/json;charset=utf-8" });
   downloadBlob(blob, "haboubi-procurement-backup.json");
 }
+async function restoreJSON(file) {
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || !Array.isArray(data.items) || !Array.isArray(data.files))
+      throw new Error("صيغة النسخة غير صحيحة؛ يلزم ملف نسخة احتياطية صادر من النظام.");
+    const validItems = data.items.filter(x => x && typeof x.name === "string" && x.name.trim());
+    if (!validItems.length && data.items.length) throw new Error("لم يتم العثور على سجلات مواد صالحة.");
+    if (!confirm("سيتم استبدال قاعدة البيانات الحالية بـ" + validItems.length + " مادة من النسخة الاحتياطية. صدّر نسخة من البيانات الحالية أولاً إذا تحتاجها. متابعة؟")) return;
+    state.items = validItems.map((item,index) => ({
+      ...item,
+      code: clean(item.code), name: clean(item.name),
+      annual: item.annual == null || item.annual === "" ? null : number(item.annual),
+      id: index + 1,
+      review: !clean(item.code) || (item.annual == null || item.annual === "" || number(item.annual) === null),
+      sources: Array.isArray(item.sources) ? item.sources : [{ source:item.source || "نسخة JSON", sheet:item.sheet || "", row:item.row || "" }]
+    }));
+    state.files = data.files.filter(x => x && typeof x.name === "string");
+    state.documentItems = []; state.selected = null;
+    $("#selectedPanel").classList.add("hidden");
+    if (!persistData()) throw new Error("تعذر حفظ النسخة المستعادة في مساحة التخزين المحلية؛ تحقق من سعة المتصفح.");
+    refreshStats(); renderDocItems(); search();
+    $("#importLog").textContent = "تمت استعادة " + state.items.length + " مادة و" + state.files.length + " ملف من: " + file.name;
+    toast("تمت استعادة النسخة الاحتياطية بنجاح");
+  } catch (error) {
+    toast("فشلت استعادة النسخة: " + error.message);
+    $("#importLog").textContent = "خطأ استعادة JSON: " + error.message;
+  } finally {
+    $("#restoreDataInput").value = "";
+  }
+}
 function exportCSV() {
   const headers = ["اسم المادة","الرمز الوطني","التصنيف","وحدة القياس","الاحتياج السنوي","الأولوية","الملاحظات","نوع المادة","الملف المصدر","الورقة","رقم الصف","يحتاج مراجعة"];
   const rows = state.items.map(x => [x.name,x.code,x.category,x.unit,x.annual,x.priority,x.note,x.kind === "drug" ? "دواء" : "مستلزم",x.source,x.sheet,x.row,x.review ? "نعم" : "لا"]);
@@ -530,6 +561,8 @@ $("#quickImport").onclick = () => navigate("database");
 $("#emptyImport").onclick = () => navigate("database");
 $("#fileInput").onchange = event => importFiles([...event.target.files]);
 $("#exportData").onclick = exportJSON;
+$("#restoreDataBtn").onclick = () => $("#restoreDataInput").click();
+$("#restoreDataInput").onchange = event => restoreJSON(event.target.files[0]);
 $("#exportCsv").onclick = exportCSV;
 $("#clearData").onclick = () => {
   if (confirm("مسح كل البيانات المستوردة من هذا المتصفح؟ لا يمكن التراجع. صدّر نسخة احتياطية قبل المسح.")) {
