@@ -275,31 +275,24 @@ function persistData() {
 }
 async function restoreData() {
   let data = null;
-  // Safari/private browsing may block localStorage; the catalog must still load into memory.
   try {
     const raw = localStorage.getItem(STORAGE_DATA) || localStorage.getItem("haboubiData");
     if (raw) data = JSON.parse(raw);
   } catch (_) { data = null; }
-  const hasExistingItems = data && Array.isArray(data.items) && data.items.length > 0;
-  if (!hasExistingItems && window.HABOUBI_DEFAULT_CATALOG && Array.isArray(window.HABOUBI_DEFAULT_CATALOG.items) && window.HABOUBI_DEFAULT_CATALOG.items.length) {
-    data = window.HABOUBI_DEFAULT_CATALOG;
-    // Persist the bundled catalog on first launch so the default never starts empty again.
-    try { localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: data.items, files: data.files || [] })); } catch (_) { /* App still uses the embedded catalog in memory. */ }
-  }
-  if (!hasExistingItems && !(data && Array.isArray(data.items) && data.items.length)) {
-    try {
-      const response = await fetch("./catalog-seed.json?rev=20261014", { cache: "no-store" });
-      if (!response.ok) throw new Error("تعذر تحميل ملف الملازم: HTTP " + response.status);
-      const seed = await response.json();
-      if (!Array.isArray(seed.items) || !Array.isArray(seed.files) || !seed.items.length) throw new Error("ملف الملازم فارغ أو غير صالح");
-      data = seed;
-      try { localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: seed.items, files: seed.files })); } catch (_) { /* Keep the loaded catalog in memory if browser storage is unavailable. */ }
-    } catch (error) {
-      console.error("Haboubi catalog load failed:", error);
-      const status = $("#dbStatus"); if (status) status.textContent = "تعذر تحميل الملازم — افتح قاعدة البيانات وحاول مجدداً";
+  // The embedded catalog is the authoritative default. Use it whenever there is
+  // no usable saved catalog; this works offline and inside the Android APK.
+  const savedItems = data && Array.isArray(data.items) ? data.items : [];
+  if (!savedItems.length) {
+    const embedded = window.HABOUBI_DEFAULT_CATALOG;
+    if (embedded && Array.isArray(embedded.items) && embedded.items.length) {
+      data = embedded;
+      try { localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: embedded.items, files: embedded.files || [] })); } catch (_) { /* Embedded catalog remains available in memory. */ }
+    } else {
+      console.error("Embedded Haboubi catalog missing or empty.");
+      const status = $("#dbStatus"); if (status) status.textContent = "ملف قاعدة البيانات المدمج غير موجود";
+      data = { items: [], files: [] };
     }
   }
-  if (!data) data = {};
   state.items = Array.isArray(data.items) ? data.items : [];
   state.files = Array.isArray(data.files) ? data.files : [];
   let settings = {};
@@ -315,6 +308,7 @@ async function restoreData() {
   state.items = state.items.map((item,index) => ({ ...item, id: index + 1, sources: item.sources || [{ source:item.source, sheet:item.sheet, row:item.row }] }));
   renderDocItems(); refreshStats();
 }
+
 function scoreItem(item, query) {
   const name = norm(item.name), code = norm(item.code), q = norm(query);
   if (!q) return 0;
