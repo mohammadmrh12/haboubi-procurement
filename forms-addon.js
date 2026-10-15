@@ -17,6 +17,10 @@ function packet(data){
  return [auth,apology,p1,p2,p3,p4,p5].join('');
 }
 const startPrint=(viewId,areaId,html,printWindow=null)=>{
+ if(window.AndroidApp&&typeof window.AndroidApp.printHtml==='function'){
+  window.AndroidApp.printHtml(html,'file:///android_asset/www/styles.css');
+  return;
+ }
  if(printWindow&&!printWindow.closed){
   const css=new URL('styles.css?v=43',location.href).href;
   printWindow.document.open();
