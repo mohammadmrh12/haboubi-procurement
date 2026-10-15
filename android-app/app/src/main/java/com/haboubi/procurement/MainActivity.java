@@ -15,6 +15,12 @@ import android.print.PrintManager;
 import android.webkit.WebChromeClient.FileChooserParams;
 import android.content.Context;
 import android.widget.Toast;
+import android.webkit.CookieManager;
+import org.json.JSONObject;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
   private WebView webView;
@@ -66,6 +72,40 @@ public class MainActivity extends Activity {
   }
 
   private class AppBridge {
+    @JavascriptInterface public void authenticate(String code) {
+      new Thread(() -> {
+        HttpURLConnection connection = null;
+        try {
+          URL url = new URL("https://medstock.cinematicplus.online/api/login");
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setRequestMethod("POST");
+          connection.setConnectTimeout(10000);
+          connection.setReadTimeout(10000);
+          connection.setDoOutput(true);
+          connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+          JSONObject payload = new JSONObject();
+          payload.put("code", code == null ? "" : code);
+          payload.put("remember", true);
+          byte[] body = payload.toString().getBytes(StandardCharsets.UTF_8);
+          try (OutputStream out = connection.getOutputStream()) { out.write(body); }
+          int status = connection.getResponseCode();
+          if (status >= 200 && status < 300) {
+            String cookie = connection.getHeaderField("Set-Cookie");
+            if (cookie != null) CookieManager.getInstance().setCookie("https://medstock.cinematicplus.online", cookie);
+            String response = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            JSONObject data = new JSONObject(response);
+            JSONObject user = data.optJSONObject("user");
+            String userJson = user == null ? "null" : user.toString();
+            runOnUiThread(() -> webView.evaluateJavascript("window.haboubiNativeLoginResult(true,''," + userJson + ")", null));
+          } else {
+            String message = status == 401 ? "الكود غير صحيح" : "تعذر التحقق من كود الدخول (" + status + ")";
+            runOnUiThread(() -> webView.evaluateJavascript("window.haboubiNativeLoginResult(false," + JSONObject.quote(message) + ",null)", null));
+          }
+        } catch (Exception ex) {
+          runOnUiThread(() -> webView.evaluateJavascript("window.haboubiNativeLoginResult(false,'تعذر الاتصال بالخادم، تحقق من الإنترنت',null)", null));
+        } finally { if (connection != null) connection.disconnect(); }
+      }).start();
+    }
     @JavascriptInterface public void openUrl(String rawUrl) {
       runOnUiThread(() -> {
         try {
