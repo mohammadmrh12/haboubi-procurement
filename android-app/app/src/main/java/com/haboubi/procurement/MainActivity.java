@@ -6,6 +6,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.ValueCallback;
 import android.webkit.JavascriptInterface;
 import android.net.Uri;
@@ -25,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 public class MainActivity extends Activity {
   private WebView webView;
   private ValueCallback<Uri[]> fileCallback;
+  private WebView printWebView;
   private static final int FILE_PICKER = 4102;
 
   @Override public void onCreate(Bundle state) {
@@ -118,14 +120,28 @@ public class MainActivity extends Activity {
         }
       });
     }
-    @JavascriptInterface public void printPage() {
+    @JavascriptInterface public void printHtml(String html, String cssUrl) {
       runOnUiThread(() -> {
         try {
-          PrintManager manager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-          manager.print("مستندات مشتريات الحبوبي", webView.createPrintDocumentAdapter("مستندات مشتريات الحبوبي"), new PrintAttributes.Builder().build());
-        } catch (Exception e) {
-          Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة", Toast.LENGTH_LONG).show();
-        }
+          if (printWebView != null) { printWebView.destroy(); printWebView = null; }
+          printWebView = new WebView(MainActivity.this);
+          WebSettings printSettings = printWebView.getSettings();
+          printSettings.setJavaScriptEnabled(false);
+          printSettings.setAllowFileAccess(true);
+          String safeCss = (cssUrl == null ? "file:///android_asset/www/styles.css" : cssUrl.replace("&", "&amp;").replace("\"", "&quot;"));
+          String document = "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><link rel=\"stylesheet\" href=\"" + safeCss + "\"><style>html,body{margin:0;padding:0;background:#fff!important;color:#000!important}.print-actions{display:none!important}#printArea{display:block!important;background:#fff!important;color:#000!important}.official-page{box-shadow:none!important;margin:0!important}@page{size:A4;margin:0}</style></head><body><div class=\"view printing\"><div id=\"printArea\">" + (html == null ? "" : html) + "</div></div></body></html>";
+          printWebView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+              view.postDelayed(() -> {
+                try {
+                  PrintManager manager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                  if (manager != null) manager.print("مستندات مشتريات الحبوبي", view.createPrintDocumentAdapter("مستندات مشتريات الحبوبي"), new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setResolution(new PrintAttributes.Resolution("haboubi", "مستندات الحبوبي", 300, 300)).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build());
+                } catch (Exception e) { Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة", Toast.LENGTH_LONG).show(); }
+              }, 350);
+            }
+          });
+          printWebView.loadDataWithBaseURL("file:///android_asset/www/", document, "text/html", "UTF-8", null);
+        } catch (Exception e) { Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة", Toast.LENGTH_LONG).show(); }
       });
     }
   }

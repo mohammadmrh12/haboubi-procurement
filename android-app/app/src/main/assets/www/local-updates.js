@@ -1,9 +1,9 @@
 (() => {
   const MANIFEST_URL='https://medstock.cinematicplus.online/android-update.json';
-  const APP_VERSION='1.2.0';
+  const APP_VERSION='1.2.2';
   const CATALOG_KEY='haboubiCatalogVersionV1';
   const $=s=>document.querySelector(s);
-  if(window.AndroidApp&&window.AndroidApp.printPage)window.print=()=>window.AndroidApp.printPage();
+  if(window.AndroidApp&&window.AndroidApp.printHtml)window.print=()=>{const area=document.getElementById('printArea');if(!area){alert('لا توجد استمارات جاهزة للطباعة');return;}const css=[...document.querySelectorAll('link[rel=stylesheet]')].map(link=>link.href).find(h=>h.includes('styles.css'))||'file:///android_asset/www/styles.css';window.AndroidApp.printHtml(area.innerHTML,css);};
   const say=message=>{const el=$('#updateStatus');if(el)el.textContent=message;};
   async function checkUpdates(manual=false){
     const button=$('#checkUpdatesBtn'); if(button)button.disabled=true;
