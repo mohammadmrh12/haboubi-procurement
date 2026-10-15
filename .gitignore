@@ -7,3 +7,6 @@ data/private/
 android-app/.gradle/
 android-app/**/build/
 logs/*.log
+
+# Local Android SDK path (machine-specific)
+android-app/local.properties
