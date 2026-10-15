@@ -16,6 +16,7 @@ import android.print.PrintManager;
 import android.webkit.WebChromeClient.FileChooserParams;
 import android.content.Context;
 import android.widget.Toast;
+import android.widget.FrameLayout;
 import android.webkit.CookieManager;
 import org.json.JSONObject;
 import java.io.OutputStream;
@@ -27,6 +28,8 @@ public class MainActivity extends Activity {
   private WebView webView;
   private ValueCallback<Uri[]> fileCallback;
   private WebView printWebView;
+  private FrameLayout rootLayout;
+  private boolean printingInProgress = false;
   private static final int FILE_PICKER = 4102;
 
   @Override public void onCreate(Bundle state) {
@@ -69,7 +72,9 @@ public class MainActivity extends Activity {
         return true;
       }
     });
-    setContentView(webView);
+    rootLayout = new FrameLayout(this);
+    rootLayout.addView(webView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+    setContentView(rootLayout);
     webView.loadUrl("file:///android_asset/www/index.html");
   }
 
@@ -123,26 +128,68 @@ public class MainActivity extends Activity {
     @JavascriptInterface public void printHtml(String html, String cssUrl) {
       runOnUiThread(() -> {
         try {
-          if (printWebView != null) { printWebView.destroy(); printWebView = null; }
+          if (html == null || html.trim().isEmpty()) {
+            Toast.makeText(MainActivity.this, "لا توجد استمارات جاهزة للطباعة", Toast.LENGTH_LONG).show();
+            return;
+          }
+          if (rootLayout == null) throw new IllegalStateException("Print container is unavailable");
+          if (printWebView != null) {
+            rootLayout.removeView(printWebView);
+            printWebView.stopLoading();
+            printWebView.destroy();
+            printWebView = null;
+          }
+          webView.setVisibility(android.view.View.INVISIBLE);
           printWebView = new WebView(MainActivity.this);
           WebSettings printSettings = printWebView.getSettings();
           printSettings.setJavaScriptEnabled(false);
+          printSettings.setDomStorageEnabled(false);
           printSettings.setAllowFileAccess(true);
-          String safeCss = (cssUrl == null ? "file:///android_asset/www/styles.css" : cssUrl.replace("&", "&amp;").replace("\"", "&quot;"));
-          String document = "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><link rel=\"stylesheet\" href=\"" + safeCss + "\"><style>html,body{margin:0;padding:0;background:#fff!important;color:#000!important}.print-actions{display:none!important}#printArea{display:block!important;background:#fff!important;color:#000!important}.official-page{box-shadow:none!important;margin:0!important}@page{size:A4;margin:0}</style></head><body><div class=\"view printing\"><div id=\"printArea\">" + (html == null ? "" : html) + "</div></div></body></html>";
+          printWebView.setBackgroundColor(android.graphics.Color.WHITE);
+          rootLayout.addView(printWebView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+          String safeCss = (cssUrl == null || cssUrl.isEmpty() ? "file:///android_asset/www/styles.css" : cssUrl.replace("&", "&amp;").replace("\"", "&quot;"));
+          String document = "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><link rel=\"stylesheet\" href=\"" + safeCss + "\"><style>html,body{margin:0;padding:0;background:#fff!important;color:#000!important}.view.printing{display:block!important}.view.printing>#printArea{display:block!important}#printArea{display:block!important;background:#fff!important;color:#000!important}.official-page{box-shadow:none!important;margin:0!important}@page{size:A4;margin:0}</style></head><body><div class=\"view printing\"><div id=\"printArea\">" + html + "</div></div></body></html>";
           printWebView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
               view.postDelayed(() -> {
                 try {
                   PrintManager manager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                  if (manager != null) manager.print("مستندات مشتريات الحبوبي", view.createPrintDocumentAdapter("مستندات مشتريات الحبوبي"), new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setResolution(new PrintAttributes.Resolution("haboubi", "مستندات الحبوبي", 300, 300)).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build());
-                } catch (Exception e) { Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة", Toast.LENGTH_LONG).show(); }
-              }, 350);
+                  if (manager == null) throw new IllegalStateException("Print service unavailable");
+                  PrintAttributes attributes = new PrintAttributes.Builder()
+                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                    .setResolution(new PrintAttributes.Resolution("haboubi", "مستندات الحبوبي", 300, 300))
+                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS).build();
+                  android.print.PrintDocumentAdapter adapter = view.createPrintDocumentAdapter("مستندات مشتريات الحبوبي");
+                  printingInProgress = true;
+                  manager.print("مستندات مشتريات الحبوبي", adapter, attributes);
+                } catch (Exception e) {
+                  webView.setVisibility(android.view.View.VISIBLE);
+                  if (printWebView != null) { rootLayout.removeView(printWebView); printWebView.destroy(); printWebView = null; }
+                  Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+              }, 700);
             }
           });
           printWebView.loadDataWithBaseURL("file:///android_asset/www/", document, "text/html", "UTF-8", null);
-        } catch (Exception e) { Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة", Toast.LENGTH_LONG).show(); }
+        } catch (Exception e) {
+          if (webView != null) webView.setVisibility(android.view.View.VISIBLE);
+          Toast.makeText(MainActivity.this, "تعذرت تهيئة الطباعة: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
       });
+    }
+  }
+
+  @Override protected void onResume() {
+    super.onResume();
+    if (printingInProgress) {
+      printingInProgress = false;
+      if (rootLayout != null && printWebView != null) {
+        rootLayout.removeView(printWebView);
+        printWebView.stopLoading();
+        printWebView.destroy();
+        printWebView = null;
+      }
+      if (webView != null) webView.setVisibility(android.view.View.VISIBLE);
     }
   }
 
