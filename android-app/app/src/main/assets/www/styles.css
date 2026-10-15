@@ -165,3 +165,12 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .about-mark{width:48px;height:48px;border-radius:15px;margin:auto;display:grid;place-items:center;background:var(--green2);color:var(--green);font-size:27px;font-weight:800}
 .about-close{position:absolute;top:8px;left:10px;border:0;background:transparent;font-size:28px;color:var(--muted);padding:2px 8px}
 @media(max-width:850px){.about-credit{font-size:14px;padding:18px 12px}.about-dialog-card{padding:28px 18px 20px}}
+
+/* Small-screen Android usability fixes */
+.doc-table{table-layout:fixed;width:100%}
+.doc-table th,.doc-table td{overflow-wrap:anywhere;word-break:break-word}
+.doc-table th:first-child,.doc-table td:first-child{width:35%}
+.doc-table th:nth-child(2),.doc-table td:nth-child(2){width:27%}
+.doc-table th:nth-child(3),.doc-table td:nth-child(3){width:17%}
+.doc-table th:nth-child(4),.doc-table td:nth-child(4){width:13%}
+@media(max-width:850px){.sidebar{height:calc(72px + env(safe-area-inset-bottom));padding:6px 8px calc(6px + env(safe-area-inset-bottom));}.nav{flex:1;min-width:0;line-height:1.25;white-space:normal;overflow-wrap:anywhere}.nav span{flex:0 0 auto}.content{padding-bottom:calc(100px + env(safe-area-inset-bottom))}.doc-table{font-size:11px}.doc-table th,.doc-table td{padding:8px 4px}.doc-table td{line-height:1.5}}
