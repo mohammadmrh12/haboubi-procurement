@@ -4,3 +4,6 @@
 node_modules/
 *.sqlite
 data/private/
+android-app/.gradle/
+android-app/**/build/
+logs/*.log

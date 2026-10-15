@@ -1,0 +1,7 @@
+tunnel: 4c0151d8-b451-425e-b82c-547ff8680b94
+credentials-file: /Users/mohammadmrh12/.cloudflared/4c0151d8-b451-425e-b82c-547ff8680b94.json
+protocol: http2
+ingress:
+  - hostname: medstock.cinematicplus.online
+    service: http://127.0.0.1:8101
+  - service: http_status:404

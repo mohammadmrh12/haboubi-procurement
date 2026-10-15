@@ -1,7 +1,7 @@
 /* Haboubi procurement prototype — Arabic RTL */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const state = { items: [], files: [], selected: null, documentItems: [], settings: {} };
+const state = { items: [], files: [], selected: null, documentItems: [], settings: {}, aiTerms: [] };
 const pages = {
   search: ["البحث عن مادة", "ابحث بالاسم العلمي أو الوصف أو الرمز الوطني، ثم راجع الاحتياج قبل إنشاء المستند."],
   documents: ["الطباعة", ""],
@@ -267,6 +267,7 @@ function refreshStats() {
 function persistData() {
   try {
     localStorage.setItem(STORAGE_DATA, JSON.stringify({ items: state.items, files: state.files }));
+    if (window.haboubiAuth && window.haboubiAuth.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings: state.settings || {} });
     return true;
   } catch (error) {
     toast("تعذر حفظ البيانات محلياً. صدّر نسخة JSON قبل متابعة الاستيراد.");
@@ -283,7 +284,9 @@ async function restoreData() {
   } catch (_) { data = null; }
   // The embedded catalog is the authoritative default. Use it whenever there is
   // no usable saved catalog; this works offline and inside the Android APK.
-  let embedded = window.HABOUBI_DEFAULT_CATALOG;
+  let embedded = null;
+  try { const updated = JSON.parse(localStorage.getItem('haboubiRemoteCatalogV1') || 'null'); if (updated && Array.isArray(updated.items) && updated.items.length) embedded = updated; } catch (_) {}
+  if (!embedded) embedded = window.HABOUBI_DEFAULT_CATALOG;
   if (!embedded || !Array.isArray(embedded.items) || !embedded.items.length) {
     try { const response = await fetch('./catalog-seed.json?v=20', { cache: 'no-store' }); if (response.ok) embedded = await response.json(); } catch (_) {}
   }
@@ -471,7 +474,7 @@ function search() {
     const btn = $("#emptyImport"); if (btn) btn.onclick = () => navigate("database");
     return;
   }
-  const translatedTerms = translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : [];
+  const translatedTerms = (translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : []).concat(state.aiTerms);
   const hits = state.items.map(item => ({ item, score: Math.max(scoreItem(item, query), ...translatedTerms.map(term => scoreItem(item, term))) }))
     .filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0,35);
   if (!hits.length) {
@@ -510,7 +513,8 @@ function selectItem(id) {
     '</div><div class="quantity-area">' +
     '<label>الكمية المطلوبة<input id="requestedQty" type="number" min="0" step="any" value="" data-calculated="' + (calculated === null ? "" : calculated) +
     '" placeholder="فارغ = احتياج ' + period + ' أشهر حسب الملزمة"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
-    '" placeholder="اختياري"></label></div><div id="qtyWarning">' +
+    '" placeholder="اختياري"></label></div><div class="quantity-area"><label>اسم المادة في الاستمارة (يمكن اختصاره)<input id="formItemName" maxlength="180" value="' + esc(item.formName || item.name) +
+    '" placeholder="اكتب الاسم المختصر الذي يظهر بالطباعة"></label></div><div id="qtyWarning">' +
     (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
       (item.annual === null ? "الاحتياج السنوي غير واضح أو غير موجود في الورقة المختارة. " : "") + "تحقق من المصدر قبل الاعتماد.</div>" : "") +
     (zeroNeed ? '<div class="warning">الاحتياج المسجل في الملزمة يساوي صفر؛ لا يعني ذلك تلقائياً عدم الحاجة. راجع المصدر قبل تجهيز مستند رسمي.</div>' : "") +
@@ -531,8 +535,9 @@ function selectItem(id) {
     if (existing) {
       if (!force && !confirm("المادة أو الرمز موجود بالفعل في المستند. تريد تحديث الكمية إلى " + fmt(qty) + "؟")) return;
       existing.requested = qty; existing.specification = $("#specification").value;
+      existing.formName = clean($("#formItemName").value) || item.name;
     } else {
-      state.documentItems.push({ ...item, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
+      state.documentItems.push({ ...item, formName: clean($("#formItemName").value) || item.name, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
     }
     renderDocItems(); toast(calculated !== null && qty > calculated ? "أضيفت مع تنبيه: تحتاج موافقة لجنة الصيدلة والعلاج" : "تمت إضافة المادة للمستند");
     $("#searchInput").value = ""; search(); $("#results").classList.remove("hidden");
@@ -573,7 +578,7 @@ function renderDocItems() {
     return;
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>المادة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th></th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td>' + esc(x.name) + '</td><td class="code">' + esc(x.code || "غير مسجل") +
+    state.documentItems.map((x,i) => '<tr><td>' + esc(x.formName || x.name) + '</td><td class="code">' + esc(x.code || "غير مسجل") +
       '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td><button class="clear-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
   $$("[data-remove]").forEach(button => button.onclick = () => {
@@ -629,7 +634,8 @@ function saveSettings() {
     pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي"
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
-  toast("تم حفظ الإعدادات على هذا الجهاز");
+  if (window.haboubiAuth && window.haboubiAuth.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
+  toast("تم حفظ الإعدادات على هذا الجهاز والموقع");
 }
 async function sha256(file) {
   if (typeof crypto === "undefined" || !crypto.subtle) return file.name + "|" + file.size + "|" + file.lastModified;
@@ -757,8 +763,8 @@ $("#addMaterialForm").addEventListener("submit", event => {
   $("#searchInput").value = nameAr;
   navigate("search"); search();
 });
-$("#searchInput").addEventListener("input", search);
-$("#clearSearch").onclick = () => { $("#searchInput").value = ""; search(); };
+$("#searchInput").addEventListener("input", () => { state.aiTerms = []; search(); });
+$("#clearSearch").onclick = () => { $("#searchInput").value = ""; state.aiTerms = []; search(); };
 const emptyImportButton = $("#emptyImport"); if (emptyImportButton) emptyImportButton.onclick = () => navigate("database");
 $("#fileInput").onchange = event => importFiles([...event.target.files]);
 $("#exportData").onclick = exportJSON;
@@ -777,4 +783,4 @@ $("#settingsBtn").onclick = () => navigate("settings");
 const printAuthorizationButton = $("#printAuthorization"); if (printAuthorizationButton) printAuthorizationButton.onclick = () => printDocument("authorization");
 const printApologyButton = $("#printApology"); if (printApologyButton) printApologyButton.onclick = () => printDocument("apology");
 if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
-restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });
+window.haboubiAppReady = restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });

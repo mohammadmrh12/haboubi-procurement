@@ -16,6 +16,28 @@ function packet(data){
  const apology=page('<div class="letterhead"><div><b>محافظة ذي قار</b><br><b>دائرة صحة محافظة ذي قار</b><br><b>قسم الصيدلة</b></div><div class="letter-number"><b>العدد: ........................</b><br><b>التاريخ:　　/　　/ '+esc(val("letterYear")||"2026")+'</b></div></div><p class="letter-text apology-recipient">إلى / '+esc($("#apologyRecipient")?.value||"مستشفى الحبوبي التعليمي")+'</p><h2 class="letter-title">م / اعتذار</h2><p class="letter-text">نعتذر عن تجهيز الأدوية والمستلزمات الطبية المدرجة أدناه لعدم توفرها في مخازن قسم الصيدلة، وحسب الطلب.</p>'+table(["ت","اسم المادة","الرمز الوطني","العدد"],data,10,["name","code","qty"])+'<p class="letter-text declaration">إني الموقع أدناه ( '+esc(val("storekeeperName")||"　　　　　　　　　")+' ) أتعهد بعدم وجود المادة ضمن المناقلات ولا يوجد في التعميم الصادر من قسم الصيدلة بوجود المادة ضمن تقدير الاحتياج، وبصحة الرمز الوطني والمعلومات المقدمة بالاعتذار.</p><div class="letter-sign"><b>الصيدلاني<br>'+esc($("#pharmacyHeadName")?.value||"علي شكري العبادي")+'<br>مدير قسم الصيدلة</b></div>','apology-page');
  return [auth,apology,p1,p2,p3,p4,p5].join('');
 }
-const startPrint=(viewId,areaId,html)=>{const view=$('#'+viewId);if(!view)return;view.classList.add('printing');const old=$('#'+areaId);if(old)old.remove();const area=document.createElement('div');area.id=areaId;area.innerHTML=html;view.appendChild(area);const cleanup=()=>{area.remove();view.classList.remove('printing');window.removeEventListener('afterprint',cleanup)};window.addEventListener('afterprint',cleanup,{once:true});requestAnimationFrame(()=>{window.print();setTimeout(cleanup,3000)});};
-const button=$('#printBoth');if(button){button.textContent='معاينة وطباعة';button.onclick=()=>{const data=items();if(!data.length){alert('أضف مادة واحدة على الأقل من البحث أولاً');return}startPrint('view-documents','printArea',packet(data));};}
+const startPrint=(viewId,areaId,html,printWindow=null)=>{
+ if(printWindow&&!printWindow.closed){
+  const css=new URL('styles.css?v=43',location.href).href;
+  printWindow.document.open();
+  printWindow.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>معاينة وطباعة — مستشفى الحبوبي</title><link rel="stylesheet" href="'+css+'"><style>html,body{margin:0;background:#fff}body{direction:rtl}.view.printing{display:block!important}.view.printing>#printArea{display:block!important}#printArea{background:#fff;color:#111}@media screen{body{padding:12px}.print-actions{position:sticky;top:0;background:#fff;padding:10px;text-align:center;border-bottom:1px solid #ddd;z-index:2}.print-actions button{font-size:17px;padding:12px 24px;background:#123c35;color:#fff;border:0;border-radius:10px}.official-page{margin:12px auto;box-shadow:0 1px 8px #bbb}}</style></head><body><div class="print-actions"><button id="printNow" type="button">طباعة / حفظ PDF</button><p>إذا لم تظهر نافذة الطباعة تلقائياً، اضغط الزر أعلاه.</p></div><section class="view printing"><div id="printArea">'+html+'</div></section></body></html>');
+  printWindow.document.close();
+  const trigger=()=>{const b=printWindow.document.getElementById('printNow');if(b)b.onclick=()=>printWindow.print();};
+  printWindow.addEventListener('load',trigger,{once:true});
+  setTimeout(()=>{try{trigger();printWindow.focus();printWindow.print()}catch(e){console.error('iOS print dialog:',e)}},900);
+  return;
+ }
+ const view=$('#'+viewId);if(!view)return;view.classList.add('printing');const old=$('#'+areaId);if(old)old.remove();const area=document.createElement('div');area.id=areaId;area.innerHTML=html;view.appendChild(area);const cleanup=()=>{area.remove();view.classList.remove('printing');window.removeEventListener('afterprint',cleanup)};window.addEventListener('afterprint',cleanup,{once:true});requestAnimationFrame(()=>{window.print();setTimeout(cleanup,3000)});
+};
+window.haboubiPrintSaved = data => { if(Array.isArray(data)&&data.length) startPrint('view-documents','printArea',packet(data)); };
+const button=$('#printBoth');if(button){button.textContent='معاينة وطباعة';button.onclick=async()=>{
+ const data=items();if(!data.length){alert('أضف مادة واحدة على الأقل من البحث أولاً');return}
+ button.disabled=true;
+ try{
+  if(!window.haboubiAuth)throw new Error('خدمة تسجيل الدخول غير جاهزة');
+  await window.haboubiAuth.saveOperation(data);
+  startPrint('view-documents','printArea',packet(data));
+ }catch(err){alert('لم تُحفظ العملية على الموقع، لذلك لم تبدأ الطباعة: '+err.message)}
+ finally{button.disabled=false}
+};}
 })();
