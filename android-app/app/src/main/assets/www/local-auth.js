@@ -20,13 +20,14 @@
       actions.append(view,reprint); card.append(heading,detail,actions); list.append(card);
     });
   }
-  const gate=$('#authGate'), form=$('#loginForm'), codeInput=$('#loginCode'), error=$('#loginError'), submit=$('#loginSubmit');
+  const gate=$('#authGate'), form=$('#loginForm'), codeInput=$('#loginCode'), error=$('#loginError'), submit=$('#loginSubmit'), rememberInput=$('#rememberDevice');
   let authenticated=false, currentUser=null;
   function lockScreen(){authenticated=false;currentUser=null;if(gate)gate.classList.remove('auth-hidden');document.body.classList.add('auth-locked');}
   function unlockScreen(user){authenticated=true;currentUser=user||{id:'local-device',name:'هذا الجهاز'};if(gate)gate.classList.add('auth-hidden');document.body.classList.remove('auth-locked');}
   window.haboubiNativeLoginResult=(ok,message,user)=>{if(submit){submit.disabled=false;submit.textContent='دخول';}if(ok){if(error)error.textContent='';unlockScreen(user);}else if(error){error.textContent=message||'تعذر التحقق من كود الدخول';}};
-  if(form)form.addEventListener('submit',event=>{event.preventDefault();if(error)error.textContent='';const entered=String(codeInput?.value||'').trim();if(!/^\d{4}$/.test(entered)){if(error)error.textContent='أدخل كود الدخول المكوّن من 4 أرقام';return;}if(!window.AndroidApp||typeof window.AndroidApp.authenticate!=='function'){if(error)error.textContent='تعذر الاتصال بخدمة التحقق';return;}if(submit){submit.disabled=true;submit.textContent='جارٍ التحقق…';}window.AndroidApp.authenticate(entered);});
+  if(form)form.addEventListener('submit',event=>{event.preventDefault();if(error)error.textContent='';const entered=String(codeInput?.value||'').trim();if(!/^\d{4}$/.test(entered)){if(error)error.textContent='أدخل كود الدخول المكوّن من 4 أرقام';return;}if(!window.AndroidApp||typeof window.AndroidApp.authenticate!=='function'){if(error)error.textContent='تعذر الاتصال بخدمة التحقق';return;}if(submit){submit.disabled=true;submit.textContent='جارٍ التحقق…';}window.AndroidApp.authenticate(entered,!!rememberInput?.checked);});
   lockScreen();
+  if(window.AndroidApp&&typeof window.AndroidApp.restoreSession==='function')window.AndroidApp.restoreSession();
   window.haboubiAuth={
     get user(){return authenticated?currentUser:null;},
     scheduleDataSave(){},

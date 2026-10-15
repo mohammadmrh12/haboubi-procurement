@@ -15,6 +15,7 @@ import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.webkit.WebChromeClient.FileChooserParams;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.widget.Toast;
 import android.widget.FrameLayout;
 import android.webkit.CookieManager;
@@ -79,7 +80,7 @@ public class MainActivity extends Activity {
   }
 
   private class AppBridge {
-    @JavascriptInterface public void authenticate(String code) {
+    @JavascriptInterface public void authenticate(String code, boolean remember) {
       new Thread(() -> {
         HttpURLConnection connection = null;
         try {
@@ -92,12 +93,19 @@ public class MainActivity extends Activity {
           connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
           JSONObject payload = new JSONObject();
           payload.put("code", code == null ? "" : code);
-          payload.put("remember", true);
+          payload.put("remember", remember);
           byte[] body = payload.toString().getBytes(StandardCharsets.UTF_8);
           try (OutputStream out = connection.getOutputStream()) { out.write(body); }
           int status = connection.getResponseCode();
           if (status >= 200 && status < 300) {
             String cookie = connection.getHeaderField("Set-Cookie");
+            SharedPreferences prefs = getSharedPreferences("haboubi_auth", MODE_PRIVATE);
+            if (remember && cookie != null && cookie.contains("haboubi_session=")) {
+              String sessionCookie = cookie.split(";", 2)[0];
+              prefs.edit().putString("session_cookie", sessionCookie).putBoolean("remember", true).apply();
+            } else {
+              prefs.edit().remove("session_cookie").putBoolean("remember", false).apply();
+            }
             if (cookie != null) CookieManager.getInstance().setCookie("https://medstock.cinematicplus.online", cookie);
             String response = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             JSONObject data = new JSONObject(response);
@@ -113,6 +121,36 @@ public class MainActivity extends Activity {
         } finally { if (connection != null) connection.disconnect(); }
       }).start();
     }
+    @JavascriptInterface public void restoreSession() {
+      SharedPreferences prefs = getSharedPreferences("haboubi_auth", MODE_PRIVATE);
+      String savedCookie = prefs.getString("session_cookie", "");
+      if (!prefs.getBoolean("remember", false) || savedCookie.isEmpty()) return;
+      new Thread(() -> {
+        HttpURLConnection connection = null;
+        try {
+          connection = (HttpURLConnection) new URL("https://medstock.cinematicplus.online/api/session").openConnection();
+          connection.setRequestMethod("GET");
+          connection.setConnectTimeout(8000);
+          connection.setReadTimeout(8000);
+          connection.setRequestProperty("Cookie", savedCookie);
+          int status = connection.getResponseCode();
+          if (status >= 200 && status < 300) {
+            String response = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            JSONObject data = new JSONObject(response);
+            JSONObject user = data.optJSONObject("user");
+            if (data.optBoolean("ok") && user != null) {
+              String userJson = user.toString();
+              runOnUiThread(() -> webView.evaluateJavascript("window.haboubiNativeLoginResult(true,''," + userJson + ")", null));
+              return;
+            }
+          }
+          prefs.edit().remove("session_cookie").putBoolean("remember", false).apply();
+        } catch (Exception ignored) {
+          // Keep the remembered session for a later retry if the network is temporarily unavailable.
+        } finally { if (connection != null) connection.disconnect(); }
+      }).start();
+    }
+
     @JavascriptInterface public void openUrl(String rawUrl) {
       runOnUiThread(() -> {
         try {

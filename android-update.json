@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 22,
-  "appVersionName": "1.2.6",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.6",
+  "appVersionCode": 23,
+  "appVersionName": "1.2.7",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.7",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إصلاح إظهار نافذة الطباعة الأصلية في Android"
+  "notes": "إصلاح تذكر تسجيل الدخول على Android"
 }
