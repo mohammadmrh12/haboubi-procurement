@@ -779,7 +779,12 @@ $("#clearData").onclick = () => {
   }
 };
 $("#saveSettings").onclick = saveSettings;
-$("#settingsBtn").onclick = () => navigate("settings");
+const aboutDialog = $("#aboutDialog");
+const closeAbout = () => aboutDialog?.classList.add("hidden");
+$("#settingsBtn").onclick = () => aboutDialog?.classList.remove("hidden");
+$("#closeAbout")?.addEventListener("click", closeAbout);
+$("#aboutOk")?.addEventListener("click", closeAbout);
+aboutDialog?.addEventListener("click", event => { if (event.target === aboutDialog) closeAbout(); });
 const printAuthorizationButton = $("#printAuthorization"); if (printAuthorizationButton) printAuthorizationButton.onclick = () => printDocument("authorization");
 const printApologyButton = $("#printApology"); if (printApologyButton) printApologyButton.onclick = () => printDocument("apology");
 if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
