@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const val=id=>$('#'+id)?.value||'';
 const items=()=>[...$('#documentItems').querySelectorAll('tbody tr')].map((tr,i)=>{const c=tr.querySelectorAll('td');return {n:i+1,name:(c[0]?.innerText||c[0]?.textContent||'').trim(),code:(c[1]?.innerText||c[1]?.textContent||'').trim(),qty:(c[2]?.innerText||c[2]?.textContent||'').trim(),spec:(c[3]?.innerText||c[3]?.textContent||'').trim(),note:''}}).filter(x=>x.name);
-const rows=(data,count,cols)=>Array.from({length:count},(_,i)=>{const x=data[i];return '<tr><td class="n">'+(i+1)+'</td>'+cols.map(k=>'<td class="'+k+'">'+(x?esc(x[k]||''):'')+'</td>').join('')+'</tr>'}).join('');
+const rows=(data,count,cols)=>Array.from({length:count},(_,i)=>{const x=data[i];return '<tr><td class="n">'+(x?String(i+1):'')+'</td>'+cols.map(k=>'<td class="'+k+'">'+(x?esc(x[k]||''):'')+'</td>').join('')+'</tr>'}).join('');
 const table=(headers,data,count,cols)=>'<table class="official-table"><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows(data,count,cols)+'</tbody></table>';
 const page=(body,cls='')=>'<section class="official-page '+cls+'" dir="rtl">'+body+'</section>';
 const blank='................................................................';
