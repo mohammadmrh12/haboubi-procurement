@@ -296,9 +296,12 @@ async function restoreData() {
     // has an older/partial local database. Keep additional user-imported records.
     const merged = [...embedded.items];
     const signature = item => [String(item.code || '').trim().toLowerCase(), String(item.name || '').trim().toLowerCase()].join('|');
-    const seen = new Set(merged.map(signature));
+    const defaultBySignature = new Map(merged.map(item => [signature(item), item]));
+    const seen = new Set(defaultBySignature.keys());
     for (const item of savedItems) {
-      const key = signature(item);
+      const key = signature(item), bundled = defaultBySignature.get(key);
+      // Preserve user-specific name overrides even when the item itself comes from the bundled catalog.
+      if (bundled && item.permanentName) bundled.permanentName = item.permanentName;
       if (!seen.has(key)) { merged.push(item); seen.add(key); }
     }
     const fileMap = new Map();
@@ -475,21 +478,22 @@ function search() {
     return;
   }
   const translatedTerms = (translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : []).concat(state.aiTerms);
-  const hits = state.items.map(item => ({ item, score: Math.max(scoreItem(item, query), ...translatedTerms.map(term => scoreItem(item, term))) }))
+  const hits = state.items.map(item => ({ item, score: Math.max(scoreItem(item, query), scoreItem({...item,name:item.permanentName||item.name}, query), ...translatedTerms.map(term => Math.max(scoreItem(item, term), scoreItem({...item,name:item.permanentName||item.name}, term)))) }))
     .filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0,35);
   if (!hits.length) {
     box.innerHTML = '<div class="empty-state"><strong>ما لقينا تطابقاً واضحاً</strong><p>جرّب الاسم بالإنجليزية أو جزءاً من الاسم أو الرمز الوطني.</p></div>';
     return;
   }
   box.innerHTML = hits.map(({item}) =>
-    '<article class="result-row"><div><div class="result-name">' + esc(item.name) + '</div>' + (item.nameAr ? '<div class="result-meta"><span>الاسم العربي: ' + esc(item.nameAr) + '</span></div>' : '') + '<div class="result-meta">' +
+    '<article class="result-row"><div><div class="result-name">' + esc(item.permanentName || item.name) + '</div>' + (item.permanentName && item.permanentName !== item.name ? '<div class="result-meta"><span>الاسم الأصلي: ' + esc(item.name) + '</span></div>' : '') + (item.nameAr ? '<div class="result-meta"><span>الاسم العربي: ' + esc(item.nameAr) + '</span></div>' : '') + '<div class="result-meta">' +
     '<span class="code">' + esc(item.code || "بدون رمز مسجل") + '</span><span>' + esc(item.unit || "الوحدة غير محددة") +
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
     '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') +
     '</div></div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
-    '</span><button class="mini-btn" data-item="' + item.id + '">إضافة المادة</button></div></article>'
+    '</span><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button><button class="mini-btn" data-item="' + item.id + '">إضافة المادة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
+  $$("[data-edit-permanent]").forEach(button => button.onclick = () => openNameEditor({kind:"catalog", id:Number(button.dataset.editPermanent)}));
 }
 function selectItem(id) {
   const item = state.items.find(x => x.id === id);
@@ -503,7 +507,7 @@ function selectItem(id) {
   const zeroNeed = item.annual === 0;
   $("#selectedPanel").classList.remove("hidden");
   $("#selectedPanel").innerHTML =
-    '<div class="selected-head"><div><p class="eyebrow">تفاصيل المادة</p><h2>' + esc(item.name) +
+    '<div class="selected-head"><div><p class="eyebrow">تفاصيل المادة</p><h2>' + esc(item.permanentName || item.name) +
     '</h2></div><button class="clear-btn" id="closeSelected">إغلاق ×</button></div>' +
     '<div class="selected-grid">' +
     field("الرمز الوطني", item.code || "غير مسجل", true) + field("التصنيف", item.kind === "drug" ? "دواء" : "مستلزم / مادة") +
@@ -513,7 +517,7 @@ function selectItem(id) {
     '</div><div class="quantity-area">' +
     '<label>الكمية المطلوبة<input id="requestedQty" type="number" min="0" step="any" value="" data-calculated="' + (calculated === null ? "" : calculated) +
     '" placeholder="فارغ = احتياج ' + period + ' أشهر حسب الملزمة"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
-    '" placeholder="اختياري"></label></div><div class="quantity-area"><label>اسم المادة في الاستمارة (يمكن اختصاره)<input id="formItemName" maxlength="180" value="' + esc(item.formName || item.name) +
+    '" placeholder="اختياري"></label></div><div class="quantity-area"><label>اسم المادة في الاستمارة (يمكن اختصاره)<input id="formItemName" maxlength="180" value="' + esc(item.formName || item.permanentName || item.name) +
     '" placeholder="اكتب الاسم المختصر الذي يظهر بالطباعة"></label></div><div id="qtyWarning">' +
     (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
       (item.annual === null ? "الاحتياج السنوي غير واضح أو غير موجود في الورقة المختارة. " : "") + "تحقق من المصدر قبل الاعتماد.</div>" : "") +
@@ -535,9 +539,9 @@ function selectItem(id) {
     if (existing) {
       if (!force && !confirm("المادة أو الرمز موجود بالفعل في المستند. تريد تحديث الكمية إلى " + fmt(qty) + "؟")) return;
       existing.requested = qty; existing.specification = $("#specification").value;
-      existing.formName = clean($("#formItemName").value) || item.name;
+      existing.formName = clean($("#formItemName").value) || item.permanentName || item.name;
     } else {
-      state.documentItems.push({ ...item, formName: clean($("#formItemName").value) || item.name, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
+      state.documentItems.push({ ...item, formName: clean($("#formItemName").value) || item.permanentName || item.name, requested: qty, specification: $("#specification").value, expected: calculated, period, special, aboveOfficialNeed: calculated !== null && qty > calculated });
     }
     renderDocItems(); toast(calculated !== null && qty > calculated ? "أضيفت مع تنبيه: تحتاج موافقة لجنة الصيدلة والعلاج" : "تمت إضافة المادة للمستند");
     $("#searchInput").value = ""; search(); $("#results").classList.remove("hidden");
@@ -584,12 +588,7 @@ function renderDocItems() {
   $$("[data-edit-name]").forEach(button => button.onclick = () => {
     const index = Number(button.dataset.editName), item = state.documentItems[index];
     if (!item) return;
-    const dialog = $("#editNameDialog"), input = $("#editMaterialName");
-    if (!dialog || !input) return;
-    $("#editNameIndex").value = String(index);
-    input.value = item.formName || item.name || "";
-    dialog.classList.remove("hidden");
-    input.focus(); input.select();
+    openNameEditor({kind:"document", index});
   });
   $$("[data-remove]").forEach(button => button.onclick = () => {
     state.documentItems.splice(Number(button.dataset.remove),1); renderDocItems();
@@ -791,16 +790,48 @@ $("#clearData").onclick = () => {
 $("#saveSettings").onclick = saveSettings;
 const editNameDialog = $("#editNameDialog");
 const closeEditNameDialog = () => editNameDialog?.classList.add("hidden");
+function openNameEditor(context) {
+  const dialog=$("#editNameDialog"), input=$("#editMaterialName"); if(!dialog||!input)return;
+  const item=context.kind==="document"?state.documentItems[context.index]:state.items.find(x=>Number(x.id)===Number(context.id));
+  if(!item)return;
+  $("#editNameIndex").value=context.kind==="document"?"doc:"+context.index:"item:"+item.id;
+  const normalSave=$("#editNameForm button[type=submit]");if(normalSave)normalSave.textContent=context.kind==="document"?"حفظ لهذه الاستمارة":"حفظ الاسم دائماً";
+  input.value=context.kind==="document"?(item.formName||item.permanentName||item.name||""):(item.permanentName||item.name||"");
+  dialog.classList.remove("hidden");input.focus();input.select();
+}
+function savePermanentMaterialName(name, context) {
+  const docItem=context.kind==="document"?state.documentItems[context.index]:null;
+  const source=state.items.find(x=>Number(x.id)===Number(docItem?docItem.id:context.id));
+  if(!source){toast("تعذر العثور على المادة الأصلية لحفظ الاسم.");return false;}
+  source.permanentName=name;
+  if(docItem)docItem.permanentName=name;
+  if(!persistData()){delete source.permanentName;return false;}
+  if(docItem)docItem.formName=name;
+  renderDocItems();search();toast("تم حفظ الاسم الدائم لهذا المستخدم فقط.");return true;
+}
 $("#editNameForm")?.addEventListener("submit", event => {
   event.preventDefault();
-  const index = Number($("#editNameIndex")?.value);
-  const item = state.documentItems[index];
-  const name = $("#editMaterialName")?.value.trim();
-  if (!item || !name) { $("#editMaterialName")?.focus(); return; }
-  item.formName = name;
-  renderDocItems();
+  const raw=$("#editNameIndex")?.value||"", name=$("#editMaterialName")?.value.trim();
+  if(!name){$("#editMaterialName")?.focus();return;}
+  const [kind,key]=raw.split(":");
+  if(kind==="doc") {const item=state.documentItems[Number(key)];if(!item)return;item.formName=name;renderDocItems();toast("تم تحديث الاسم في هذه الاستمارة فقط.");}
+  else if(kind==="item") {if(!savePermanentMaterialName(name,{kind:"catalog",id:Number(key)}))return;}
   closeEditNameDialog();
-  toast("تم تحديث اسم المادة في الاستمارات المطبوعة.");
+});
+$("#savePermanentName")?.addEventListener("click",()=>{
+  const raw=$("#editNameIndex")?.value||"",name=$("#editMaterialName")?.value.trim();if(!name){$("#editMaterialName")?.focus();return;}
+  const [kind,key]=raw.split(":");const context=kind==="doc"?{kind:"document",index:Number(key)}:{kind:"catalog",id:Number(key)};
+  if(savePermanentMaterialName(name,context))closeEditNameDialog();
+});
+$("#restoreOriginalName")?.addEventListener("click",()=>{
+  const raw=$("#editNameIndex")?.value||"",[kind,key]=raw.split(":");
+  const docItem=kind==="doc"?state.documentItems[Number(key)]:null;
+  const source=state.items.find(x=>Number(x.id)===Number(docItem?docItem.id:key));
+  if(!source){toast("تعذر العثور على المادة الأصلية.");return;}
+  delete source.permanentName;
+  if(docItem){docItem.permanentName=undefined;docItem.formName=source.name;}
+  if(!persistData())return;
+  if(docItem)renderDocItems();search();$("#editMaterialName").value=source.name||"";toast("تم إرجاع الاسم الأصلي وحذف التعديل الدائم لهذا المستخدم.");closeEditNameDialog();
 });
 $("#closeEditName")?.addEventListener("click", closeEditNameDialog);
 $("#cancelEditName")?.addEventListener("click", closeEditNameDialog);

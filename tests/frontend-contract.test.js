@@ -9,18 +9,22 @@ const androidApp = fs.readFileSync(path.join(root, 'android-app/app/src/main/ass
 const androidForms = fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/forms-addon.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 assert.match(app, /id="formItemName"/, 'item details should expose an editable form name');
-assert.match(app, /formName:\s*clean\(\$\("#formItemName"\)\.value\)\s*\|\|\s*item\.name/, 'form name should default to original name');
+assert.match(app, /formName:\s*clean\(\$\("#formItemName"\)\.value\)\s*\|\|\s*item\.permanentName\s*\|\|\s*item\.name/, 'form name should default to persistent override when set');
 assert.match(app, /esc\(x\.formName\s*\|\|\s*x\.name\)/, 'document item list should use shortened name when present');
 assert.match(forms, /const items=\(\)=>.*name:\(c\[0\]\?\.querySelector\('\.doc-name-text'\)/, 'print packet should read the displayed material name from the document table');
 assert.match(app, /data-edit-name/, 'document item list should expose a dedicated edit button');
 assert.match(html, /id=\"editNameDialog\"/, 'print name editing should use a popup dialog');
+assert.match(html, /id=\"savePermanentName\"/, 'popup should support per-user permanent name changes');
+assert.match(html, /id=\"restoreOriginalName\"/, 'popup should support restoring original name');
+assert.match(app, /bundled\.permanentName = item\.permanentName/, 'per-user name overrides should survive merging the bundled catalog');
+assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v55/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=56', 'app.js?v=49', 'forms-addon.js?v=49', 'catalog-seed.js?v=30', 'auth.js?v=3']) {
+assert.match(sw, /haboubi-procurement-v57/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=56', 'app.js?v=51', 'forms-addon.js?v=49', 'catalog-seed.js?v=30', 'auth.js?v=3']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
