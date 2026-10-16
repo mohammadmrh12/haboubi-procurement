@@ -577,10 +577,14 @@ function renderDocItems() {
     box.innerHTML = '<p class="muted">لم تتم إضافة مواد بعد. ابحث عن مادة ثم اضغط «إضافة للمستند».</p>';
     return;
   }
-  box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>المادة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th></th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td>' + esc(x.formName || x.name) + '</td><td class="code">' + esc(x.code || "غير مسجل") +
-      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td><button class="clear-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
+  box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
+    state.documentItems.map((x,i) => '<tr><td><input class="doc-name-edit" data-edit-name="' + i + '" aria-label="تعديل اسم المادة للطباعة" value="' + esc(x.formName || x.name) + '"></td><td class="code">' + esc(x.code || "غير مسجل") +
+      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
+  $$("[data-edit-name]").forEach(input => input.addEventListener('input', () => {
+    const item = state.documentItems[Number(input.dataset.editName)];
+    if (item) item.formName = input.value;
+  }));
   $$("[data-remove]").forEach(button => button.onclick = () => {
     state.documentItems.splice(Number(button.dataset.remove),1); renderDocItems();
   });
