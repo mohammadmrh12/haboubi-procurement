@@ -19,8 +19,8 @@ assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache ve
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v47/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=50', 'app.js?v=49', 'forms-addon.js?v=46', 'catalog-seed.js?v=30', 'auth.js?v=3']) {
+assert.match(sw, /haboubi-procurement-v48/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=50', 'app.js?v=49', 'forms-addon.js?v=47', 'catalog-seed.js?v=30', 'auth.js?v=3']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
