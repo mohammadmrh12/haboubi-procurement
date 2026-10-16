@@ -11,6 +11,17 @@ const pages = {
 };
 const STORAGE_DATA = "haboubiDataV2";
 const STORAGE_SETTINGS = "haboubiSettings";
+function populateYearSelect(select, selectedYear) {
+  if (!select || typeof select.replaceChildren !== "function" || typeof document.createElement !== "function") return;
+  const current = Number(selectedYear) || Number(select.value) || 2026;
+  select.replaceChildren();
+  for (let year = 2000; year <= 2100; year++) {
+    const option = document.createElement("option"); option.value = String(year); option.textContent = String(year); select.append(option);
+  }
+  select.value = String(Math.min(2100, Math.max(2000, current)));
+}
+populateYearSelect(document.querySelector("#letterYear"), 2026);
+
 function toast(message) {
   const el = $("#toast"); el.textContent = message; el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2800);
@@ -676,7 +687,8 @@ function saveSettings() {
   const settings = {
     hospitalName: $("#hospitalName").value, authRecipient: $("#authRecipient").value,
     apologyRecipient: $("#apologyRecipient").value, directorName: $("#directorName").value,
-    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي"
+    pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي",
+    letterYear: $("#letterYear")?.value || "2026"
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
   if (window.haboubiAuth && window.haboubiAuth.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
@@ -824,6 +836,12 @@ $("#clearData").onclick = () => {
   }
 };
 $("#saveSettings").onclick = saveSettings;
+$("#letterYear")?.addEventListener("change", () => {
+  const settings = loadSettings(); settings.letterYear = $("#letterYear").value;
+  try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (_) {}
+  state.settings = settings;
+  if (window.haboubiAuth?.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
+});
 const editNameDialog = $("#editNameDialog");
 const closeEditNameDialog = () => editNameDialog?.classList.add("hidden");
 function openNameEditor(context) {
