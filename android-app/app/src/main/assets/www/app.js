@@ -765,7 +765,7 @@ function printDocument(type) {
     : '<p class="document-body">نعتذر عن تجهيز الأدوية والمستلزمات الطبية المدرجة أدناه لعدم توفرها في مخازن قسم الصيدلة وحسب الطلب.</p>';
   const declaration = isAuth ? "" :
     '<div class="declaration">أني الموقع أدناه ( <strong>' + esc($("#apologyDeclarant").value.trim() || "................................") +
-    '</strong> ) أتعهد بعدم وجود المادة ضمن المناقلات ولا يوجد في التعميم الصادر من قسم الصيدلة بوجود المادة ضمن تقدير الاحتياج وبصحة الرمز الوطني والمعلومات المقدمة بالاعتذار.</div>' +
+    '</strong> ) أتعهد بعدم وجود المادة ضمن المناقلات ولا يوجد في التعميم الصادر من قسم الصيدلة واتعهد بوجود المادة ضمن تقدير الاحتياج وبصحة الرمز الوطني والمعلومات المقدمة بالاعتذار.</div>' +
     '<div class="signature pharmacist">الصيدلاني<br><strong>' + esc($("#pharmacistName").value || settings.pharmacistName || "علي شكري العبادي") + '</strong></div>';
   const view = $("#view-documents");
   view.classList.add("printing");
