@@ -349,9 +349,56 @@ async function restoreData() {
   if (state.items.length) { const results = $('#results'); if (results && !$('#searchInput').value.trim()) results.innerHTML = '<div class="empty-state"><div class="empty-icon">⌕</div><strong>قاعدة البيانات جاهزة</strong><p>تم تحميل ' + fmt(state.items.length) + ' مادة. اكتب اسم المادة أو الرمز الوطني للبحث.</p></div>'; }
 }
 
+function latinPhoneticKey(value) {
+  return norm(value).replace(/[أإآٱا]/g,"a").replace(/ب/g,"b").replace(/[تط]/g,"t").replace(/[ثسص]/g,"s").replace(/[ج]/g,"j").replace(/[حخ]/g,"h").replace(/[دض]/g,"d").replace(/[ذزظ]/g,"z").replace(/ر/g,"r").replace(/ش/g,"sh").replace(/ع/g,"").replace(/غ/g,"g").replace(/[فقكق]/g,"k").replace(/ل/g,"l").replace(/م/g,"m").replace(/ن/g,"n").replace(/[هحة]/g,"h").replace(/و/g,"o").replace(/ي/g,"i").replace(/ئ/g,"i").replace(/ؤ/g,"o").replace(/ء/g,"").replace(/x/g,"z").replace(/ph/g,"f").replace(/ck/g,"k").replace(/qu/g,"k").replace(/c/g,"k").replace(/[aeiouy\s]/g,"").replace(/(.)\1+/g,"$1");
+}
+const drugAliasLookupCache = new Map();
+function drugAliasEntries(query) {
+  const source = window.HABOUBI_DRUG_ALIASES || {}, q = norm(query), phonetic = latinPhoneticKey(query);
+  const cacheKey = q + "|" + phonetic;
+  if (drugAliasLookupCache.has(cacheKey)) return drugAliasLookupCache.get(cacheKey);
+  const matches = [];
+  for (const [brand, generics] of Object.entries(source)) {
+    const b = norm(brand);
+    if (!b) continue;
+    if (b === q || (q.length >= 4 && b.startsWith(q)) || (phonetic.length >= 3 && latinPhoneticKey(brand) === phonetic)) matches.push({brand, generics, exact:b===q || latinPhoneticKey(brand)===phonetic});
+  }
+  const result = matches.sort((a,b)=>Number(b.exact)-Number(a.exact));
+  if (drugAliasLookupCache.size > 80) drugAliasLookupCache.clear();
+  drugAliasLookupCache.set(cacheKey, result);
+  return result;
+}
+const DRUG_GENERIC_EQUIVALENTS = {
+  paracetamol:["acetaminophen"], acetaminophen:["paracetamol"], frusemide:["furosemide"], furosemide:["frusemide"],
+  salbutamol:["albuterol"], albuterol:["salbutamol"], adrenaline:["epinephrine"], epinephrine:["adrenaline"],
+  noradrenaline:["norepinephrine"], norepinephrine:["noradrenaline"], aciclovir:["acyclovir"], acyclovir:["aciclovir"],
+  valaciclovir:["valacyclovir"], valacyclovir:["valaciclovir"], levothyroxine:["thyroxine"], thyroxine:["levothyroxine"],
+  coamoxiclav:["amoxicillin clavulanic acid","amoxicillin clavulanate"], "amoxicillin clavulanate":["coamoxiclav","amoxicillin clavulanic acid"],
+  sulfamethoxazole:["co trimoxazole","trimethoprim"], cotrimoxazole:["co trimoxazole","trimethoprim"],
+  "folinic acid":["calcium folinate","leucovorin"], "calcium folinate":["folinic acid","leucovorin"],
+  "methylprednisolone sodium succinate":["methylprednisolone"], "morphine sulfate":["morphine sulphate"], "morphine sulphate":["morphine sulfate"]
+};
+function drugAliasScore(item, query) {
+  const matches = drugAliasEntries(query);
+  if (!matches.length) return 0;
+  const itemName = norm([item.name,item.nameAr,item.genericName,item.scientificName,...(Array.isArray(item.aliases)?item.aliases:[])].filter(Boolean).join(" "));
+  let best = 0;
+  for (const match of matches) for (const genericRaw of match.generics || []) {
+    const generic = norm(genericRaw); if (!generic || generic.length < 4) continue;
+    const terms = [generic,...(DRUG_GENERIC_EQUIVALENTS[generic]||[])].map(norm);
+    if (terms.some(term => term && (itemName === term || itemName.startsWith(term+" ") || itemName.includes(" "+term+" ") || itemName.includes(term)))) best = Math.max(best, match.exact ? 1180 : 930);
+  }
+  return best;
+}
 function scoreItem(item, query) {
   const name = norm([item.name, item.nameAr, ...(Array.isArray(item.aliases) ? item.aliases : [])].filter(Boolean).join(" ")), code = norm(item.code), q = norm(query);
+  const brandScore = drugAliasScore(item, query);
   if (!q) return 0;
+  if (brandScore) return brandScore;
+  const itemNameForSynonyms = norm([item.name,item.nameAr,item.genericName,item.scientificName].filter(Boolean).join(" "));
+  const genericQuery = q.replace(/\b(?:hydrochloride|hydrobromide|sulfate|sulphate|sodium|potassium|tablet|capsule|oral)\b/g, " ").trim();
+  const equivalents = DRUG_GENERIC_EQUIVALENTS[genericQuery] || [];
+  if (equivalents.some(term => itemNameForSynonyms.includes(norm(term)))) return 1120;
   if (code && code === q) return 1200;
   if (name === q) return 1150;
   if (code && code.startsWith(q)) return 1000;
@@ -363,6 +410,8 @@ function scoreItem(item, query) {
   if (hits === words.length) return 700 + hits;
   if (hits) return 300 + hits * 10;
   const candidateWords = name.split(" ").filter(w => w.length >= Math.max(3, q.length - 2));
+  const qPhonetic = latinPhoneticKey(query);
+  if (qPhonetic.length >= 3 && candidateWords.some(w => latinPhoneticKey(w) === qPhonetic)) return 260;
   const distances = candidateWords.map(w => editDistance(w, q));
   const distance = distances.length ? Math.min(...distances) : 99;
   return distance <= 1 ? 250 : distance <= 2 ? 150 : 0;
@@ -379,7 +428,7 @@ function editDistance(a,b) {
   return previous[b.length];
 }
 const AR_MEDICAL_TERMS = {
-  "باراسيتامول":"paracetamol acetaminophen", "بنادول":"paracetamol acetaminophen", "اسيتامينوفين":"acetaminophen paracetamol",
+  "باراسيتامول":"paracetamol acetaminophen", "بنادول":"paracetamol acetaminophen", "اسيتامينوفين":"acetaminophen paracetamol", "زيلودا":"xeloda capecitabine", "كسيلودا":"xeloda capecitabine", "كابسيتابين":"capecitabine", "كابيسيتابين":"capecitabine", "باراسيتامول":"paracetamol acetaminophen", "اوجمنتين":"augmentin amoxicillin clavulanic acid", "اموكسكلاف":"amoxicillin clavulanic acid coamoxiclav", "فلاجيل":"flagyl metronidazole", "فنتولين":"ventolin salbutamol", "نيكسيوم":"nexium esomeprazole", "كونكور":"concor bisoprolol", "ليبيتور":"lipitor atorvastatin", "كريستور":"crestor rosuvastatin",
   "ايبوبروفين":"ibuprofen", "ديكلوفيناك":"diclofenac", "اموكسيسيلين":"amoxicillin", "ازيثرومايسين":"azithromycin",
   "سيفترياكسون":"ceftriaxone", "ميترونيدازول":"metronidazole", "اوميبرازول":"omeprazole", "بانتوبرازول":"pantoprazole",
   "ميتفورمين":"metformin", "انسولين":"insulin", "اسبرين":"aspirin", "اتورفاستاتين":"atorvastatin",

@@ -19,7 +19,7 @@ assert.match(html, /id=\"restoreOriginalName\"/, 'popup should support restoring
 assert.match(app, /bundled\.permanentName = item\.permanentName/, 'per-user name overrides should survive merging the bundled catalog');
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
-assert.match(html, /app\.js\?v=64/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=65/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=54/, 'forms asset should have an explicit cache version');
 
 assert.match(html, /styles\.css\?v=74/, 'updated input zoom CSS should be cache-busted');
@@ -36,8 +36,8 @@ assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/ww
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v82/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=74', 'app.js?v=64', 'forms-addon.js?v=54', 'catalog-seed.js?v=30', 'auth.js?v=11']) {
+assert.match(sw, /haboubi-procurement-v83/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=74', 'drug-aliases.js?v=1', 'app.js?v=65', 'forms-addon.js?v=54', 'catalog-seed.js?v=30', 'auth.js?v=11']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -76,3 +76,6 @@ assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /qty:item\.req
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /zeroItems\.length&&!confirm/, "history editor must confirm before saving zero quantities");
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /هذه العملية تحتوي .*مادة محفوظة بكمية صفر/, "history editor must warn when a saved operation already contains zero quantities");
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /saved\.qty\?\?saved\.requested/, "history edit must restore saved quantity field");
+
+assert.match(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), /function drugAliasScore[\s\S]*?latinPhoneticKey/, 'search should map brand names and phonetic Arabic spellings to generic ingredients');
+assert.match(fs.readFileSync(path.join(root, 'drug-aliases.js'), 'utf8'), /xeloda.*capecitabine/i, 'brand alias map should map Xeloda to capecitabine');
