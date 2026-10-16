@@ -15,7 +15,7 @@
   async function api(url, options={}) {
     const method = String(options.method || 'GET').toUpperCase();
     const body = typeof options.body === 'string' ? options.body : (options.body == null ? '' : JSON.stringify(options.body));
-    if (location.protocol === 'file:' && window.AndroidApp && typeof window.AndroidApp.apiRequest === 'function') {
+    if (window.AndroidApp && typeof window.AndroidApp.apiRequest === 'function') {
       const id = String(++nativeRequestId);
       return new Promise((resolve, reject) => {
         nativeRequests.set(id, {resolve, reject});
