@@ -797,7 +797,7 @@ function openNameEditor(context) {
   $("#editNameIndex").value=context.kind==="document"?"doc:"+context.index:"item:"+item.id;
   const normalSave=$("#editNameForm button[type=submit]");if(normalSave)normalSave.textContent=context.kind==="document"?"حفظ لهذه الاستمارة":"حفظ الاسم دائماً";
   input.value=context.kind==="document"?(item.formName||item.permanentName||item.name||""):(item.permanentName||item.name||"");
-  dialog.classList.remove("hidden");input.focus();input.select();
+  dialog.classList.remove("hidden");input.focus();input.setSelectionRange?.(0,input.value.length);
 }
 function savePermanentMaterialName(name, context) {
   const docItem=context.kind==="document"?state.documentItems[context.index]:null;
