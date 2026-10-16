@@ -23,8 +23,8 @@ assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache ve
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v72/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=67', 'app.js?v=58', 'forms-addon.js?v=50', 'catalog-seed.js?v=30', 'auth.js?v=7']) {
+assert.match(sw, /haboubi-procurement-v73/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=68', 'app.js?v=59', 'forms-addon.js?v=51', 'catalog-seed.js?v=30', 'auth.js?v=7']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -46,4 +46,5 @@ assert.match(fs.readFileSync(path.join(root, "styles.css"), "utf8"), /direct-add
 
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-name=\"\' \+ i \+ \'\">تعديل الاسم/, "print item edit button should say edit name");
 
-assert.doesNotMatch(fs.readFileSync(path.join(root, "app.js"), "utf8"), /تعديل العدد|data-edit-qty|data-qty-save/, "quantity editing must not appear on the print-items form");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-qty/, "quantity editing remains available on the print-items form");
+assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /querySelector\('.quantity-value'\)\?\.textContent/, "printed quantity must exclude the quantity-edit button label");

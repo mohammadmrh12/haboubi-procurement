@@ -245,7 +245,7 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .history-edit-row legend{font-weight:700;padding:0 6px}
 .history-edit-row label{display:block;margin:8px 0;font-size:13px;font-weight:600}
 
-
+.quantity-edit-cell{min-width:105px;text-align:center}.doc-qty-edit-btn{display:block;margin:6px auto 0;padding:5px 9px!important;font-size:12px!important;white-space:nowrap}.inline-qty-label{display:block;font-size:12px;font-weight:700}.inline-qty-label input{display:block;width:90px;max-width:100%;min-height:38px;margin:4px auto;padding:6px;border:1px solid #b9ccc5;border-radius:7px;font:inherit;font-size:16px}.inline-qty-warning{min-width:180px;text-align:right}.inline-qty-actions{display:flex;flex-direction:column;gap:5px;min-width:130px}.inline-qty-actions button{font-size:12px!important;padding:7px!important}.inline-qty-actions [hidden]{display:none!important}
 
 .result-actions [data-add-direct]{white-space:normal;max-width:170px}
 
@@ -256,9 +256,15 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 
 /* Align row actions to the bottom edge of each material row on narrow screens. */
 #documentItems tbody tr{vertical-align:bottom}
-#documentItems .doc-name-cell{vertical-align:bottom}
-#documentItems .doc-edit-btn{margin-top:8px;display:block}
-#documentItems .quantity-value{min-width:70px;text-align:center;vertical-align:middle}
+#documentItems .doc-name-cell,#documentItems .quantity-edit-cell{vertical-align:bottom}
+#documentItems .doc-edit-btn,#documentItems .doc-qty-edit-btn{margin-top:8px;display:block}
+#documentItems .quantity-edit-cell{padding-bottom:12px}
+#documentItems .doc-name-cell{padding-bottom:12px}
+
+/* Keep the quantity value in its normal top position; only the edit action sits at the bottom. */
+#documentItems .quantity-edit-cell{position:relative;vertical-align:top!important;padding-bottom:58px!important}
+#documentItems .quantity-value{display:block;min-height:1.6em;line-height:1.6;text-align:center}
+#documentItems .doc-qty-edit-btn{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);margin:0!important}
 
 /* Android/WebView stability: prevent horizontal drift and overscroll bounce. */
 @media screen{html,body{overflow-x:clip!important;overscroll-behavior-x:none!important;width:100%;min-width:0;position:relative}body{touch-action:pan-y pinch-zoom}.layout,.content,.search-panel,.card,.selected-panel{min-width:0;max-width:100%;overflow-wrap:anywhere}}

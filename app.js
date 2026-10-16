@@ -602,12 +602,23 @@ function renderDocItems() {
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
     state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل الاسم</button></td><td class="code">' + esc(x.code || "غير مسجل") +
-      '</td><td class="quantity-value">' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
+      '</td><td class="quantity-edit-cell"><div class="quantity-value">' + fmt(x.requested) + '</div><button type="button" class="secondary doc-qty-edit-btn" data-edit-qty="' + i + '">تعديل العدد</button></td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
   $$("[data-edit-name]").forEach(button => button.onclick = () => {
     const index = Number(button.dataset.editName), item = state.documentItems[index];
     if (!item) return;
     openNameEditor({kind:"document", index});
+  });
+  $$("[data-edit-qty]").forEach(button => button.onclick = () => {
+    const index=Number(button.dataset.editQty), item=state.documentItems[index]; if(!item)return;
+    const cell=button.closest('td');
+    const expected=item.expected!=null?Number(item.expected):null;
+    cell.innerHTML='<label class="inline-qty-label">العدد<input type="number" min="0" step="any" value="'+esc(item.requested)+'" data-qty-value></label><div class="inline-qty-warning" aria-live="polite"></div><div class="inline-qty-actions"><button type="button" class="primary" data-qty-save>حفظ العدد</button><button type="button" class="secondary" data-qty-continue>متابعة على أي حال</button><button type="button" class="secondary" data-qty-cancel>إلغاء</button></div>';
+    const input=cell.querySelector('[data-qty-value]'), warning=cell.querySelector('.inline-qty-warning'), cont=cell.querySelector('[data-qty-continue]');
+    const assess=()=>{const q=number(input.value);const over=q!==null&&expected!==null&&q>expected;const unknown=expected===null||item.review||!item.code;warning.innerHTML=(over?'<div class="warning"><strong>الكمية أعلى من الاحتياج المحسوب.</strong><p>تحتاج مراجعة وموافقة لجنة الصيدلة والعلاج والمتابعة.</p></div>':'')+(unknown?'<div class="warning">تحقق من الرمز الوطني والاحتياج مع الصيدلة والعلاج قبل الاعتماد.</div>':'');cont.hidden=!(over||unknown);};
+    assess();input.addEventListener('input',assess);
+    const save=(force)=>{const q=number(input.value);if(q===null||q<0){toast('أدخل عدداً صحيحاً قبل الحفظ');input.focus();return;}const over=expected!==null&&q>expected;const unknown=expected===null||item.review||!item.code;if((over||unknown)&&!force){assess();toast(over?'الكمية تتجاوز الاحتياج؛ راجع لجنة الصيدلة والعلاج أو اختر متابعة على أي حال.':'المادة تحتاج مراجعة؛ تحقق من بيانات الصيدلة والعلاج أو اختر متابعة على أي حال.');return;}item.requested=q;item.aboveOfficialNeed=over;item.reviewAcknowledged=!!force;renderDocItems();toast(over||unknown?'تم تحديث العدد مع إبقاء تنبيه المراجعة.':'تم تحديث العدد.');};
+    cell.querySelector('[data-qty-save]').onclick=()=>save(false);cont.onclick=()=>{if(confirm('تأكيد المتابعة على أي حال رغم تنبيه الاحتياج ومراجعة لجنة الصيدلة والعلاج والمتابعة؟'))save(true);};cell.querySelector('[data-qty-cancel]').onclick=()=>renderDocItems();input.focus();
   });
   $$("[data-remove]").forEach(button => button.onclick = () => {
     state.documentItems.splice(Number(button.dataset.remove),1); renderDocItems();
@@ -617,7 +628,7 @@ window.haboubiLoadHistoryForEdit = row => {
   const items=Array.isArray(row?.items)?row.items:[];if(!items.length){toast('لا توجد مواد في هذه العملية');return;}
   state.documentItems=items.map(saved=>{const catalog=state.items.find(x=>String(x.code||'').trim().toLowerCase()===String(saved.code||'').trim().toLowerCase());const item=catalog?{...catalog}:{};const expected=item.annual==null?null:Number(item.annual)/(item.kind==='drug'?4:2);return {...item,id:item.id||0,name:saved.name||item.name||'',formName:saved.name||item.permanentName||item.name||'',code:saved.code||item.code||'',requested:Number(saved.qty)||0,unit:item.unit||'',specification:saved.spec||item.dose||'',note:saved.note||item.note||'',expected,period:item.kind==='drug'?3:6,review:!!item.review||!saved.code||!catalog,aboveOfficialNeed:expected!==null&&Number(saved.qty)>expected,historyEditId:row.id};});
   const y=$('#letterYear'),a=$('#authorizedName'),sk=$('#storekeeperName');if(y)y.value=row.year||'2026';if(a)a.value=row.authorizedName||'';if(sk)sk.value=row.storekeeperName||'';
-  const nav=$('[data-view="documents"]');if(nav)nav.click();renderDocItems();toast('تم تحميل المواد ومعلومات العملية إلى صفحة الطباعة.');
+  const nav=$('[data-view="documents"]');if(nav)nav.click();renderDocItems();toast('تم تحميل المواد ومعلومات العملية إلى صفحة الطباعة. عدّل العدد أسفل الكمية ثم راجع التنبيهات قبل الطباعة.');
 };
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch { return {}; }
