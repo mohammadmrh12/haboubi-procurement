@@ -19,7 +19,7 @@ assert.match(html, /id=\"restoreOriginalName\"/, 'popup should support restoring
 assert.match(app, /bundled\.permanentName = item\.permanentName/, 'per-user name overrides should survive merging the bundled catalog');
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
-assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=61/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 
 assert.match(html, /styles\.css\?v=70/, 'updated input zoom CSS should be cache-busted');
@@ -31,8 +31,8 @@ assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/ww
 
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v76/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=70', 'app.js?v=60', 'forms-addon.js?v=51', 'catalog-seed.js?v=30', 'auth.js?v=9']) {
+assert.match(sw, /haboubi-procurement-v77/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=70', 'app.js?v=61', 'forms-addon.js?v=51', 'catalog-seed.js?v=30', 'auth.js?v=9']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -55,6 +55,8 @@ assert.match(fs.readFileSync(path.join(root, "styles.css"), "utf8"), /direct-add
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-name=\"\' \+ i \+ \'\">تعديل الاسم/, "print item edit button should say edit name");
 
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-qty/, "quantity editing remains available on the print-items form");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-qty-restore/, "quantity editor should offer restore-to-need action");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /item\.requested=expected;item\.aboveOfficialNeed=false/, "restore-to-need action should set quantity to calculated need");
 assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /querySelector\('.quantity-value'\)\?\.textContent/, "printed quantity must exclude the quantity-edit button label");
 
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /qty:item\.requested\?\?item\.qty/, "history save must persist requested quantities");
