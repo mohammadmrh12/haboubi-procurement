@@ -80,6 +80,54 @@ public class MainActivity extends Activity {
   }
 
   private class AppBridge {
+    @JavascriptInterface public void apiRequest(String rawPath, String method, String body, String requestId) {
+      new Thread(() -> {
+        HttpURLConnection connection = null;
+        int status = 503;
+        String responseText = "{\"error\":\"تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.\"}";
+        try {
+          String path = rawPath == null ? "/" : rawPath;
+          if (!path.startsWith("/api/") || path.contains("\\\\") || path.contains("..")) throw new IllegalArgumentException("Invalid API path");
+          URL url = new URL("https://medstock.cinematicplus.online" + path);
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setRequestMethod(method == null ? "GET" : method.toUpperCase(java.util.Locale.ROOT));
+          connection.setConnectTimeout(12000);
+          connection.setReadTimeout(15000);
+          connection.setRequestProperty("Accept", "application/json");
+          SharedPreferences prefs = getSharedPreferences("haboubi_auth", MODE_PRIVATE);
+          String savedCookie = prefs.getString("session_cookie", "");
+          if (!savedCookie.isEmpty() && !path.equals("/api/login")) connection.setRequestProperty("Cookie", savedCookie);
+          if (body != null && !body.isEmpty() && !"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            try (OutputStream out = connection.getOutputStream()) { out.write(body.getBytes(StandardCharsets.UTF_8)); }
+          }
+          status = connection.getResponseCode();
+          String setCookie = connection.getHeaderField("Set-Cookie");
+          if (setCookie != null && setCookie.contains("haboubi_session=")) {
+            String sessionCookie = setCookie.split(";", 2)[0];
+            if (setCookie.contains("Max-Age=0")) prefs.edit().remove("session_cookie").putBoolean("remember", false).apply();
+            else if (path.equals("/api/login")) {
+              JSONObject payload = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+              if (payload.optBoolean("remember", false)) prefs.edit().putString("session_cookie", sessionCookie).putBoolean("remember", true).apply();
+              else prefs.edit().remove("session_cookie").putBoolean("remember", false).apply();
+              if (payload.optBoolean("remember", false)) CookieManager.getInstance().setCookie("https://medstock.cinematicplus.online", setCookie);
+            }
+          }
+          java.io.InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+          if (stream != null) try (java.io.InputStream in = stream; java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096]; int count; while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+            responseText = out.toString(StandardCharsets.UTF_8.name());
+          }
+        } catch (Exception ex) {
+          responseText = "{\"error\":\"تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.\"}";
+        } finally { if (connection != null) connection.disconnect(); }
+        final int resultStatus = status;
+        final String resultBody = responseText;
+        runOnUiThread(() -> webView.evaluateJavascript("window.haboubiNativeApiResult && window.haboubiNativeApiResult(" + JSONObject.quote(requestId) + "," + resultStatus + "," + JSONObject.quote(resultBody) + ")", null));
+      }).start();
+    }
+
     @JavascriptInterface public void authenticate(String code, boolean remember) {
       new Thread(() -> {
         HttpURLConnection connection = null;

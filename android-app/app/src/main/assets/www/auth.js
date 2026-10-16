@@ -2,7 +2,27 @@
   const $ = s => document.querySelector(s);
   let currentUser = null;
   const gate = $('#authGate'), form = $('#loginForm'), code = $('#loginCode'), error = $('#loginError');
+  const nativeRequests = new Map();
+  let nativeRequestId = 0;
+  window.haboubiNativeApiResult = (id, status, raw) => {
+    const pending = nativeRequests.get(String(id));
+    if (!pending) return;
+    nativeRequests.delete(String(id));
+    let data; try { data = JSON.parse(raw || '{}'); } catch { data = {error:'استجابة غير مفهومة من الخادم'}; }
+    if (status >= 200 && status < 300) pending.resolve(data);
+    else pending.reject(new Error(data.error || 'تعذر إكمال الطلب (' + status + ')'));
+  };
   async function api(url, options={}) {
+    const method = String(options.method || 'GET').toUpperCase();
+    const body = typeof options.body === 'string' ? options.body : (options.body == null ? '' : JSON.stringify(options.body));
+    if (location.protocol === 'file:' && window.AndroidApp && typeof window.AndroidApp.apiRequest === 'function') {
+      const id = String(++nativeRequestId);
+      return new Promise((resolve, reject) => {
+        nativeRequests.set(id, {resolve, reject});
+        try { window.AndroidApp.apiRequest(String(url), method, body, id); }
+        catch (err) { nativeRequests.delete(id); reject(new Error('تعذر بدء الاتصال بالخادم من تطبيق أندرويد')); }
+      });
+    }
     const response = await fetch(url, { credentials:'same-origin', cache:'no-store', ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
     const data = await response.json().catch(()=>({error:'استجابة غير مفهومة من الخادم'}));
     if (!response.ok) throw new Error(data.error || 'تعذر إكمال الطلب');
