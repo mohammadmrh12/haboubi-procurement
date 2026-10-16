@@ -41,6 +41,7 @@ const button=$('#printBoth');if(button){button.textContent='معاينة وطب�
   if(!window.haboubiAuth)throw new Error('خدمة تسجيل الدخول غير جاهزة');
   await window.haboubiAuth.saveOperation(data);
   startPrint('view-documents','printArea',packet(data));
+  setTimeout(()=>{const a=$('#authorizedName'),s=$('#storekeeperName');if(a)a.value='';if(s)s.value='';},1200);
  }catch(err){alert('لم تُحفظ العملية على الموقع، لذلك لم تبدأ الطباعة: '+err.message)}
  finally{button.disabled=false}
 };}
