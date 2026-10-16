@@ -133,7 +133,14 @@
     api,
     scheduleDataSave,
     async saveOperation(items){
-      const payload={kind:'اعتذار وتخويل',items,year:$('#letterYear')?.value||'2026',authorizedName:$('#authorizedName')?.value||'',storekeeperName:$('#storekeeperName')?.value||''};
+      const normalizedItems=(Array.isArray(items)?items:[]).map(item=>({
+        name:item.formName||item.name||'',
+        code:item.code||'',
+        qty:item.requested??item.qty??'',
+        spec:item.specification||item.spec||item.dose||'',
+        note:item.note||''
+      }));
+      const payload={kind:'اعتذار وتخويل',items:normalizedItems,year:$('#letterYear')?.value||'2026',authorizedName:$('#authorizedName')?.value||'',storekeeperName:$('#storekeeperName')?.value||''};
       const result=await api('/api/history',{method:'POST',body:JSON.stringify(payload)});await loadHistory();return result.item;
     },
     async restoreSession(){
