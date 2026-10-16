@@ -265,3 +265,6 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 #documentItems .quantity-edit-cell{position:relative;vertical-align:top!important;padding-bottom:58px!important}
 #documentItems .quantity-value{display:block;min-height:1.6em;line-height:1.6;text-align:center}
 #documentItems .doc-qty-edit-btn{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);margin:0!important}
+
+/* Android/WebView stability: prevent horizontal drift and overscroll bounce. */
+html,body{overflow-x:clip!important;overscroll-behavior-x:none!important;width:100%;min-width:0;position:relative}body{touch-action:pan-y pinch-zoom}.layout,.content,.search-panel,.card,.selected-panel{min-width:0;max-width:100%;overflow-wrap:anywhere}

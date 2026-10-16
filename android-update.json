@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 26,
-  "appVersionName": "1.3.0",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.3.0-login-fix",
+  "appVersionCode": 27,
+  "appVersionName": "1.3.1",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.3.1-refresh-layout-fix",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إصلاح الاتصال بخادم تسجيل الدخول داخل تطبيق أندرويد، وتحديث تحميل auth.js لتجنب استخدام النسخة القديمة."
+  "notes": "إعادة زر تحديث البيانات وإصلاح تحرك الواجهة أفقياً في أندرويد."
 }

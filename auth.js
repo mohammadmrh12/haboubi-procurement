@@ -115,6 +115,19 @@
     (row.items||[]).forEach((item,i)=>{const section=document.createElement('fieldset');section.className='history-edit-row';const legend=document.createElement('legend');legend.textContent='المادة '+(i+1);section.append(legend);for(const [key,label,value] of [['name','اسم المادة',item.name],['code','الرمز الوطني',item.code],['qty','الكمية',item.qty],['spec','المواصفة / الجرعة',item.spec],['note','ملاحظات',item.note]]){const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.name=key;input.value=value||'';input.maxLength=key==='name'?400:300;l.append(input);section.append(l);}container.append(section);});modal.classList.remove('hidden');
   }
   $('#refreshHistory')?.addEventListener('click',loadHistory);
+  $('#refreshAppData')?.addEventListener('click', async () => {
+    const button=$('#refreshAppData'); button.disabled=true; const old=button.textContent; button.textContent='جارٍ تحديث البيانات…';
+    try {
+      if(!currentUser) throw new Error('سجّل الدخول أولاً');
+      const result=await api('/api/data');
+      if(!result.data) throw new Error('لا توجد نسخة بيانات محفوظة لهذا المستخدم على الموقع');
+      localStorage.setItem('haboubiDataV2',JSON.stringify({items:result.data.items||[],files:result.data.files||[]}));
+      localStorage.setItem('haboubiSettings',JSON.stringify(result.data.settings||{}));
+      localStorage.setItem('haboubiLocalUserId',String(currentUser.id));
+      sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');
+      location.reload();
+    } catch(err) { alert('تعذر تحديث البيانات: '+err.message); button.disabled=false; button.textContent=old; }
+  });
   window.haboubiAuth = {
     get user(){return currentUser;},
     api,

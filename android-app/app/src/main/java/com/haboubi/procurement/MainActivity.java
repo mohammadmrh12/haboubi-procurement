@@ -43,15 +43,6 @@ public class MainActivity extends Activity {
       getWindow().setStatusBarContrastEnforced(false);
     }
     webView = new WebView(this);
-    if (android.os.Build.VERSION.SDK_INT >= 21) {
-      webView.setOnApplyWindowInsetsListener((view, insets) -> {
-        int top = insets.getSystemWindowInsetTop();
-        int bottom = insets.getSystemWindowInsetBottom();
-        view.setPadding(0, top, 0, bottom);
-        return insets;
-      });
-      webView.setFitsSystemWindows(true);
-    }
     WebSettings settings = webView.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
