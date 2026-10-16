@@ -550,8 +550,22 @@ function search() {
     return;
   }
   const translatedTerms = (translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : []).concat(state.aiTerms);
-  const hits = state.items.map(item => ({ item, score: Math.max(scoreItem(item, query), scoreItem({...item,name:item.permanentName||item.name}, query), ...translatedTerms.map(term => Math.max(scoreItem(item, term), scoreItem({...item,name:item.permanentName||item.name}, term)))) }))
-    .filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0,35);
+  const hits = state.items.map((item, index) => {
+    const scores = [scoreItem(item, query), scoreItem({...item,name:item.permanentName||item.name}, query), ...translatedTerms.map(term => Math.max(scoreItem(item, term), scoreItem({...item,name:item.permanentName||item.name}, term)))];
+    const score = Math.max(...scores);
+    const normalizedQuery = norm(query);
+    const normalizedNames = [item.name, item.permanentName, item.nameAr, item.genericName, item.scientificName, ...(Array.isArray(item.aliases) ? item.aliases : [])].filter(Boolean).map(norm);
+    const exactName = normalizedNames.some(name => name === normalizedQuery);
+    const exactCode = norm(item.code) === normalizedQuery;
+    const annualNeed = item.annual == null || item.annual === "" || !Number.isFinite(Number(item.annual)) ? -1 : Number(item.annual);
+    return { item, score, exact: exactCode || exactName, annualNeed, index };
+  }).filter(x => x.score > 0).sort((a,b) => {
+    // Exact item/code matches always win, even if the recorded need is low or zero.
+    if (a.exact !== b.exact) return Number(b.exact) - Number(a.exact);
+    // Only after match quality is tied/approximate do we prioritize higher recorded need.
+    if (!a.exact && a.annualNeed !== b.annualNeed) return b.annualNeed - a.annualNeed;
+    return b.score - a.score || b.annualNeed - a.annualNeed || a.index - b.index;
+  }).slice(0,35);
   if (!hits.length) {
     box.innerHTML = '<div class="empty-state"><strong>ما لقينا تطابقاً واضحاً</strong><p>جرّب الاسم بالإنجليزية أو جزءاً من الاسم أو الرمز الوطني.</p></div>';
     return;
