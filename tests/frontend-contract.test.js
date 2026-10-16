@@ -58,4 +58,6 @@ assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-qty/
 assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /querySelector\('.quantity-value'\)\?\.textContent/, "printed quantity must exclude the quantity-edit button label");
 
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /qty:item\.requested\?\?item\.qty/, "history save must persist requested quantities");
+assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /zeroItems\.length&&!confirm/, "history editor must confirm before saving zero quantities");
+assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /هذه العملية تحتوي .*مادة محفوظة بكمية صفر/, "history editor must warn when a saved operation already contains zero quantities");
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /saved\.qty\?\?saved\.requested/, "history edit must restore saved quantity field");
