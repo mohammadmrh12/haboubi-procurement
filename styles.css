@@ -228,6 +228,16 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
  #printArea .official-page{border:1px solid #b8b8b8!important;outline:1px solid #dedede!important;outline-offset:-4px!important}
 }
 
+/* Prevent iOS AirPrint from appending a blank final sheet after the last official form. */
+@media print {
+  .print-actions { display: none !important; }
+  #printArea > .official-page:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+    margin-bottom: 0 !important;
+  }
+}
+
 /* Keep official signatures anchored at bottom-left, with year-only date below. */
 @media print{
  #printArea .auth-page,#printArea .apology-page{position:relative!important}
