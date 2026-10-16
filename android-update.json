@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 35,
-  "appVersionName": "1.3.9",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.3.9-need-ranking",
+  "appVersionCode": 36,
+  "appVersionName": "1.4.0",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.0-fuzzy-search",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إضافة مرادفات من مصادر وزارة الصحة العراقية وتوسيع البحث للأدوية والمستلزمات والمواد المختبرية، مع ترتيب نتائج البحث التقريبي حسب الاحتياج مع إبقاء التطابق الدقيق أولاً."
+  "notes": "إضافة مرادفات من مصادر وزارة الصحة العراقية وتوسيع البحث للأدوية والمستلزمات والمواد المختبرية، مع تصحيح الأخطاء الإملائية والبحث التقريبي متعدد الكلمات مع الحفاظ على أولوية التطابق الدقيق."
 }

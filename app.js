@@ -29,7 +29,7 @@ function toast(message) {
 function clean(value) { return value == null ? "" : String(value).replace(/\s+/g, " ").trim(); }
 function norm(value) {
   return clean(value).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/[ًٌٍَُِّْـ]/g, "")
+    .replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ک/g, "ك").replace(/ی/g, "ي").replace(/[ًٌٍَُِّْـ]/g, "")
     .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 function number(value) {
@@ -415,23 +415,50 @@ function scoreItem(item, query) {
   const hits = words.filter(w => name.includes(w) || code.includes(w)).length;
   if (hits === words.length) return 700 + hits;
   if (hits) return 300 + hits * 10;
-  const candidateWords = name.split(" ").filter(w => w.length >= Math.max(3, q.length - 2));
+  const candidateWords = name.split(" ").filter(w => w.length >= 2);
+  const queryWords = q.split(" ").filter(Boolean);
   const qPhonetic = latinPhoneticKey(query);
   if (qPhonetic.length >= 3 && candidateWords.some(w => latinPhoneticKey(w) === qPhonetic)) return 260;
-  const distances = candidateWords.map(w => editDistance(w, q));
-  const distance = distances.length ? Math.min(...distances) : 99;
-  return distance <= 1 ? 250 : distance <= 2 ? 150 : 0;
+  // Fuzzy token matching handles multi-word queries, misspellings and adjacent transposed letters.
+  let matched = 0, fuzzyPoints = 0;
+  for (const queryWord of queryWords) {
+    if (queryWord.length < 2) continue;
+    if (candidateWords.some(word => word === queryWord || word.startsWith(queryWord))) {
+      matched++; fuzzyPoints += 90; continue;
+    }
+    const maxDistance = queryWord.length >= 8 ? 2 : queryWord.length >= 5 ? 1 : 1;
+    let best = 99;
+    for (const word of candidateWords) {
+      if (Math.abs(word.length - queryWord.length) > maxDistance) continue;
+      best = Math.min(best, editDistance(word, queryWord));
+      // For longer entered prefixes, allow a typo while matching the start of a catalog word.
+      if (word.length > queryWord.length && word.startsWith(queryWord.slice(0, Math.max(2, queryWord.length - 1)))) {
+        best = Math.min(best, editDistance(word.slice(0, queryWord.length), queryWord));
+      }
+    }
+    if (best <= maxDistance) { matched++; fuzzyPoints += best === 0 ? 90 : best === 1 ? 65 : 45; }
+  }
+  if (matched && queryWords.length) {
+    const coverage = matched / queryWords.filter(w => w.length >= 2).length;
+    if (coverage >= 1) return 230 + fuzzyPoints;
+    if (coverage >= 0.5) return 170 + fuzzyPoints;
+  }
+  return 0;
 }
 function editDistance(a,b) {
+  if (a === b) return 0;
   if (Math.abs(a.length - b.length) > 3) return 99;
-  let previous = Array.from({ length: b.length + 1 }, (_,i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const current = [i];
-    for (let j = 1; j <= b.length; j++)
-      current[j] = Math.min(current[j-1] + 1, previous[j] + 1, previous[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
-    previous = current;
+  // Optimal-string-alignment Damerau-Levenshtein: insertions, deletions, substitutions and adjacent swaps.
+  const rows = a.length + 1, cols = b.length + 1;
+  const d = Array.from({length:rows},()=>Array(cols).fill(0));
+  for (let i=0;i<rows;i++) d[i][0]=i;
+  for (let j=0;j<cols;j++) d[0][j]=j;
+  for (let i=1;i<rows;i++) for (let j=1;j<cols;j++) {
+    const cost = a[i-1] === b[j-1] ? 0 : 1;
+    d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost);
+    if (i>1 && j>1 && a[i-1]===b[j-2] && a[i-2]===b[j-1]) d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1);
   }
-  return previous[b.length];
+  return d[a.length][b.length];
 }
 const AR_MEDICAL_TERMS = {
   "باراسيتامول":"paracetamol acetaminophen", "بنادول":"paracetamol acetaminophen", "اسيتامينوفين":"acetaminophen paracetamol", "زيلودا":"xeloda capecitabine", "كسيلودا":"xeloda capecitabine", "كابسيتابين":"capecitabine", "كابيسيتابين":"capecitabine", "باراسيتامول":"paracetamol acetaminophen", "اوجمنتين":"augmentin amoxicillin clavulanic acid", "اموكسكلاف":"amoxicillin clavulanic acid coamoxiclav", "فلاجيل":"flagyl metronidazole", "فنتولين":"ventolin salbutamol", "نيكسيوم":"nexium esomeprazole", "كونكور":"concor bisoprolol", "ليبيتور":"lipitor atorvastatin", "كريستور":"crestor rosuvastatin",
