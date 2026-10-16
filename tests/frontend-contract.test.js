@@ -23,8 +23,8 @@ assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache ve
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v61/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=60', 'app.js?v=53', 'forms-addon.js?v=49', 'catalog-seed.js?v=30', 'auth.js?v=5']) {
+assert.match(sw, /haboubi-procurement-v62/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=61', 'app.js?v=54', 'forms-addon.js?v=50', 'catalog-seed.js?v=30', 'auth.js?v=5']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -36,3 +36,6 @@ assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /textContent='
 
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /haboubiLoadHistoryForEdit/, "history edit should load items into print page");
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-edit-qty/, "print table should provide quantity editing below quantity");
+
+assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /c\[2\]\?\.querySelector\('span'\)/, "print forms should extract only quantity and never the edit button label");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-add-direct/, "search results should allow direct addition to print page");

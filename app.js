@@ -493,7 +493,26 @@ function search() {
     '</span><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button><button class="mini-btn" data-item="' + item.id + '">إضافة المادة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
+  $$("[data-add-direct]").forEach(button => button.onclick = () => addSearchResultDirect(Number(button.dataset.addDirect)));
   $$("[data-edit-permanent]").forEach(button => button.onclick = () => openNameEditor({kind:"catalog", id:Number(button.dataset.editPermanent)}));
+}
+function addSearchResultDirect(id) {
+  const item=state.items.find(x=>Number(x.id)===Number(id));if(!item)return;
+  const divisor=item.kind==='drug'?4:2,period=item.kind==='drug'?3:6;
+  const expected=item.annual==null?null:Number(item.annual)/divisor;
+  const qty=expected;
+  const over=qty!==null&&expected!==null&&qty>expected;
+  const needsReview=!!item.review||!item.code||expected===null;
+  if(qty===null||!Number.isFinite(qty)||qty<0){toast('تعذر تحديد كمية آمنة تلقائياً. افتح تفاصيل المادة وأدخل العدد يدوياً.');selectItem(id);return;}
+  const add=force=>{
+    if(needsReview&&!force&&!confirm('المادة تحتاج مراجعة الرمز الوطني أو الاحتياج. إضافة كمسودة غير معتمدة إلى الطباعة؟'))return;
+    const existing=state.documentItems.find(x=>x.code&&norm(x.code)===norm(item.code));
+    const entry={...item,formName:item.permanentName||item.name,requested:qty,specification:item.dose||'',expected,period,aboveOfficialNeed:over,reviewAcknowledged:!!force};
+    if(existing)Object.assign(existing,entry);else state.documentItems.push(entry);
+    renderDocItems();const nav=$('[data-view="documents"]');if(nav)nav.click();toast(needsReview?'أضيفت المادة للطباعة كمسودة مع تنبيه المراجعة.':'أضيفت المادة مباشرة إلى صفحة الطباعة.');
+  };
+  if(over){if(!confirm('الكمية المحسوبة تتجاوز الاحتياج؟ راجع لجنة الصيدلة والعلاج. هل تريد المتابعة على أي حال؟')){selectItem(id);return;}add(true);return;}
+  add(false);
 }
 function selectItem(id) {
   const item = state.items.find(x => x.id === id);

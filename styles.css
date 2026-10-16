@@ -246,3 +246,5 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .history-edit-row label{display:block;margin:8px 0;font-size:13px;font-weight:600}
 
 .quantity-edit-cell{min-width:105px;text-align:center}.doc-qty-edit-btn{display:block;margin:6px auto 0;padding:5px 9px!important;font-size:12px!important;white-space:nowrap}.inline-qty-label{display:block;font-size:12px;font-weight:700}.inline-qty-label input{display:block;width:90px;max-width:100%;min-height:38px;margin:4px auto;padding:6px;border:1px solid #b9ccc5;border-radius:7px;font:inherit;font-size:16px}.inline-qty-warning{min-width:180px;text-align:right}.inline-qty-actions{display:flex;flex-direction:column;gap:5px;min-width:130px}.inline-qty-actions button{font-size:12px!important;padding:7px!important}.inline-qty-actions [hidden]{display:none!important}
+
+.result-actions [data-add-direct]{white-space:normal;max-width:170px}
