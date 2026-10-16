@@ -203,12 +203,13 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .history-actions .history-delete-btn:disabled{opacity:.55}
 @media print{
  @page{size:A4 portrait;margin:0}
- html,body{margin:0!important;padding:0!important;width:210mm!important}
- .view.printing,#printArea{display:block!important;width:210mm!important;margin:0!important;padding:0!important;overflow:visible!important}
- #printArea .official-page{position:relative!important;display:block!important;width:210mm!important;height:296mm!important;min-height:296mm!important;max-height:296mm!important;overflow:hidden!important;box-sizing:border-box!important;margin:0!important;padding:13mm 12mm!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ html,body{margin:0!important;padding:0!important;width:210mm!important;height:auto!important}
+ .view.printing,#printArea{display:block!important;width:210mm!important;margin:0!important;padding:0!important;overflow:visible!important;height:auto!important}
+ /* iOS Safari adds an extra blank sheet when a full 296-297mm block overflows by fractions of a millimetre. */
+ #printArea .official-page{position:relative!important;display:block!important;width:210mm!important;height:280mm!important;min-height:280mm!important;max-height:280mm!important;overflow:hidden!important;box-sizing:border-box!important;margin:0!important;padding:13mm 12mm!important;break-inside:avoid!important;page-break-inside:avoid!important}
  #printArea .official-page:not(:last-child){break-after:page!important;page-break-after:always!important}
  #printArea .official-page:last-child{break-after:auto!important;page-break-after:auto!important}
- #printArea .auth-page,#printArea .apology-page{height:296mm!important;min-height:296mm!important;max-height:296mm!important;break-after:page!important;page-break-after:always!important}
+ #printArea .auth-page,#printArea .apology-page{height:280mm!important;min-height:280mm!important;max-height:280mm!important;break-after:auto!important;page-break-after:auto!important}
  #printArea .official-page *{box-sizing:border-box}
 }
 
