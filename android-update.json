@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 24,
-  "appVersionName": "1.2.8",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.8",
+  "appVersionCode": 25,
+  "appVersionName": "1.2.9",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.9",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "تحديث واجهة الطباعة: تثبيت مكان العدد وتحسين زر تعديل العدد وتحديث الواجهة"
+  "notes": "تحديث كامل لواجهة البحث والطباعة: إضافة مباشرة، تعديل الاسم والعدد، وتحذيرات الاحتياج ومراجعة لجنة الصيدلة والعلاج والمتابعة"
 }
