@@ -6,7 +6,7 @@
 <title>مستشفى الحبوبي</title>
 <script>
 (async()=>{try{const key="haboubi-cache-reset-v30";if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,"1");let changed=false;if("serviceWorker" in navigator){const regs=await navigator.serviceWorker.getRegistrations();for(const reg of regs){changed=(await reg.unregister())||changed;}}if("caches" in window){for(const name of await caches.keys()){changed=(await caches.delete(name))||changed;}}if(changed){const url=new URL(location.href);url.searchParams.set("_appfix","30");location.replace(url.href);}}catch(e){console.error("Cache migration failed",e);}})();
-</script><link rel="manifest" href="manifest.json"><link rel="icon" type="image/svg+xml" href="logo.svg?v=3"><link rel="apple-touch-icon" href="apple-touch-icon-v3.png"><link rel="stylesheet" href="styles.css?v=53">
+</script><link rel="manifest" href="manifest.json"><link rel="icon" type="image/svg+xml" href="logo.svg?v=3"><link rel="apple-touch-icon" href="apple-touch-icon-v3.png"><link rel="stylesheet" href="styles.css?v=54">
 </head>
 <body>
 <header class="topbar"><div class="brand"><img class="brand-logo" src="logo.svg?v=3" alt="شعار مشتريات الحبوبي"/></div><div class="top-actions"><span class="status-dot"></span><span id="dbStatus">قاعدة البيانات غير مستوردة</span><button class="icon-btn" id="settingsBtn" aria-label="About" title="About">ⓘ</button></div></header>

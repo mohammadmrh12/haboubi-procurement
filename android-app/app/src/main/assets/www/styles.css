@@ -211,6 +211,12 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
  #printArea .official-page:last-child{break-after:auto!important;page-break-after:auto!important}
  #printArea .auth-page,#printArea .apology-page{height:280mm!important;min-height:280mm!important;max-height:280mm!important;break-after:auto!important;page-break-after:auto!important}
  #printArea .official-page *{box-sizing:border-box}
+ /* Keep committee approvals anchored lower on the estimate form, with room for signatures and stamp. */
+ #printArea .cost-page{position:relative!important}
+ #printArea .cost-page .committee-pair{position:absolute!important;left:12mm!important;right:12mm!important;top:145mm!important;margin:0!important;align-items:flex-start!important}
+ #printArea .cost-page .committee{width:49%!important;margin:0!important}
+ #printArea .cost-page .committee table{margin-top:2mm!important}
+ #printArea .cost-page .committee .chair-sign{display:block!important;margin-top:12mm!important;min-height:18mm!important;line-height:1.8!important}
  /* Preserve the printed page frame consistently on every form. */
  #printArea .official-page{border:1px solid #b8b8b8!important;outline:1px solid #dedede!important;outline-offset:-4px!important}
 }
