@@ -332,7 +332,9 @@ async function restoreData() {
   try { settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch (_) {}
   state.settings = settings;
   Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el && key !== "letterYear") el.value = value; });
-  const authorizedNameInput = $("#authorizedName"); if (authorizedNameInput && settings.authorizedName) authorizedNameInput.value = settings.authorizedName;
+  const authorizedNameInput = $("#authorizedName"); if (authorizedNameInput) authorizedNameInput.value = "";
+  const hadSavedAuthorizedName = Object.prototype.hasOwnProperty.call(settings, "authorizedName");
+  if (hadSavedAuthorizedName) { delete settings.authorizedName; try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (_) {} }
   const storekeeperNameInput = $("#storekeeperName"); if (storekeeperNameInput && settings.storekeeperName) storekeeperNameInput.value = settings.storekeeperName;
   const yearSelect = $("#letterYear");
   if (yearSelect) {
@@ -345,6 +347,7 @@ async function restoreData() {
     try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(state.settings)); } catch (_) {}
   }
   state.items = state.items.map((item,index) => ({ ...item, id: index + 1, sources: item.sources || [{ source:item.source, sheet:item.sheet, row:item.row }] }));
+  if (hadSavedAuthorizedName && window.haboubiAuth?.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
   renderDocItems(); refreshStats();
   if (state.items.length) { const results = $('#results'); if (results && !$('#searchInput').value.trim()) results.innerHTML = '<div class="empty-state"><div class="empty-icon">⌕</div><strong>قاعدة البيانات جاهزة</strong><p>تم تحميل ' + fmt(state.items.length) + ' مادة. اكتب اسم المادة أو الرمز الوطني للبحث.</p></div>'; }
 }
@@ -693,7 +696,7 @@ function renderDocItems() {
 window.haboubiLoadHistoryForEdit = row => {
   const items=Array.isArray(row?.items)?row.items:[];if(!items.length){toast('لا توجد مواد في هذه العملية');return;}
   state.documentItems=items.map(saved=>{const catalog=state.items.find(x=>String(x.code||'').trim().toLowerCase()===String(saved.code||'').trim().toLowerCase());const item=catalog?{...catalog}:{};const expected=item.annual==null?null:Number(item.annual)/(item.kind==='drug'?4:2);return {...item,id:item.id||0,name:saved.name||item.name||'',formName:saved.name||item.permanentName||item.name||'',code:saved.code||item.code||'',requested:Number(saved.qty??saved.requested??0)||0,unit:item.unit||'',specification:saved.spec||item.dose||'',note:saved.note||item.note||'',expected,period:item.kind==='drug'?3:6,review:!!item.review||!saved.code||!catalog,aboveOfficialNeed:expected!==null&&Number(saved.qty)>expected,historyEditId:row.id};});
-  const y=$('#letterYear'),a=$('#authorizedName'),sk=$('#storekeeperName');if(y)y.value=row.year||'2026';if(a)a.value=row.authorizedName||'';if(sk)sk.value=row.storekeeperName||'';
+  const y=$('#letterYear'),a=$('#authorizedName'),sk=$('#storekeeperName');if(y)y.value=row.year||'2026';if(a)a.value='';if(sk)sk.value=row.storekeeperName||'';
   const nav=$('[data-view="documents"]');if(nav)nav.click();renderDocItems();toast('تم تحميل المواد والكميات المحفوظة إلى صفحة الطباعة.');
 };
 function loadSettings() {
@@ -736,7 +739,7 @@ function printDocument(type) {
     (isAuth ? '<div class="director-signature"><strong>' + esc($("#directorName").value.trim() || settings.directorName || "الدكتور احمد صبحي خضير") + '</strong><span>مدير مستشفى الحبوبي التعليمي</span></div>' : '<div class="director-signature"><strong>' + esc($("#pharmacyHeadName").value.trim() || settings.pharmacyHeadName || $("#directorName").value.trim() || settings.directorName || "الدكتور احمد صبحي خضير") + '</strong><span>مدير قسم الصيدلة</span></div>') +
     '<p class="draft-note">مسودة مولدة آلياً للمراجعة — يلزم التحقق من صحة البيانات ومطابقة النموذج قبل التوقيع والاعتماد.</p>';
   view.appendChild(div); window.print();
-  setTimeout(() => { div.remove(); view.classList.remove("printing"); }, 600);
+  setTimeout(() => { div.remove(); view.classList.remove("printing"); if (isAuth) $("#authorizedName").value = ""; }, 600);
 }
 function saveSettings() {
   const existingSettings = loadSettings();
@@ -944,7 +947,7 @@ $("#closeNamePicker")?.addEventListener("click", closeNamePicker);
 $("#cancelNamePicker")?.addEventListener("click", closeNamePicker);
 namePickerDialog?.addEventListener("click", event => { if (event.target === namePickerDialog) closeNamePicker(); });
 document.addEventListener("keydown", event => { if (event.key === "Escape") closeNamePicker(); });
-$("#authorizedName")?.addEventListener("change", () => { const name = $("#authorizedName").value.trim(); if (name) { const settings = loadSettings(); settings.authorizedName = name; persistNameLists(settings); } });
+$("#authorizedName")?.addEventListener("change", () => { const settings = loadSettings(); if (Object.prototype.hasOwnProperty.call(settings, "authorizedName")) { delete settings.authorizedName; persistNameLists(settings); } });
 $("#storekeeperName")?.addEventListener("change", () => { const name = $("#storekeeperName").value.trim(); if (name) { const settings = loadSettings(); settings.storekeeperName = name; persistNameLists(settings); } });
 $("#letterYear")?.addEventListener("change", () => {
   const settings = loadSettings(); settings.letterYear = $("#letterYear").value; settings.letterYearManual = true;

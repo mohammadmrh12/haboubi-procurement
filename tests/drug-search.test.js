@@ -21,6 +21,10 @@ assert.ok(context.score(capecitabine, 'xeloda') >= 1100, 'Xeloda should return c
 assert.ok(context.score(capecitabine, 'زيلودا') >= 1100, 'Arabic spelling of Xeloda should return capecitabine');
 assert.equal(context.phonetic('Xeloda'), context.phonetic('زيلودا'), 'Arabic and English brand transliterations should normalize together');
 assert.ok(context.score({ name: 'Paracetamol 500mg Tablet' }, 'acetaminophen') >= 1100, 'generic synonyms should cross-match');
+assert.ok(context.score({ name: 'Medical Rubber Gloves examinaton Large (Pack x100)' }, 'كفوف فحص') >= 1100, 'Iraqi Arabic supply synonym should map to a medical glove catalogue item');
+assert.ok(context.score({ name: 'glucose strips for glucometer' }, 'شرائط فحص السكر') >= 1100, 'laboratory/diagnostic supply synonyms should map to existing catalogue items');
+assert.ok(context.score({ name: 'Furosemide 40mg Tablet' }, 'لازكس') >= 1100, 'Iraqi Ministry trade-name reference Lasix should map to the generic drug');
+assert.ok(JSON.parse(fs.readFileSync(root + '/drug-aliases.json', 'utf8')).sourceUrls.some(url => url.includes('dta.gov.iq')), 'Iraqi Ministry source should be recorded in alias metadata');
 const aliases = JSON.parse(fs.readFileSync(root + '/drug-aliases.json', 'utf8')).aliases;
 assert.ok(Object.keys(aliases).length >= 1000, 'researched brand crosswalk should contain broad brand coverage');
 console.log(`PASS: brand/generic search, Arabic transliteration, synonyms, and ${Object.keys(aliases).length} trade-name aliases.`);
