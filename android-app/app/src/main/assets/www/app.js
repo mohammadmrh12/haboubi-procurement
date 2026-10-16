@@ -13,14 +13,14 @@ const STORAGE_DATA = "haboubiDataV2";
 const STORAGE_SETTINGS = "haboubiSettings";
 function populateYearSelect(select, selectedYear) {
   if (!select || typeof select.replaceChildren !== "function" || typeof document.createElement !== "function") return;
-  const current = Number(selectedYear) || Number(select.value) || 2026;
+  const current = Number(selectedYear) || Number(select.value) || new Date().getFullYear();
   select.replaceChildren();
   for (let year = 2000; year <= 2100; year++) {
     const option = document.createElement("option"); option.value = String(year); option.textContent = String(year); select.append(option);
   }
   select.value = String(Math.min(2100, Math.max(2000, current)));
 }
-populateYearSelect(document.querySelector("#letterYear"), 2026);
+populateYearSelect(document.querySelector("#letterYear"), new Date().getFullYear());
 
 function toast(message) {
   const el = $("#toast"); el.textContent = message; el.classList.add("show");
@@ -331,7 +331,11 @@ async function restoreData() {
   let settings = {};
   try { settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch (_) {}
   state.settings = settings;
-  Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el) el.value = value; });
+  Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el && key !== "letterYear") el.value = value; });
+  const yearSelect = $("#letterYear");
+  if (yearSelect) {
+    populateYearSelect(yearSelect, settings.letterYearManual === true ? settings.letterYear : new Date().getFullYear());
+  }
   const pharmacyHeadInput = $("#pharmacyHeadName");
   if (pharmacyHeadInput && (!pharmacyHeadInput.value.trim() || pharmacyHeadInput.value.trim() === "الدكتور احمد صبحي خضير")) {
     pharmacyHeadInput.value = "علي شكري العبادي";
@@ -688,7 +692,7 @@ function saveSettings() {
     hospitalName: $("#hospitalName").value, authRecipient: $("#authRecipient").value,
     apologyRecipient: $("#apologyRecipient").value, directorName: $("#directorName").value,
     pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي",
-    letterYear: $("#letterYear")?.value || "2026"
+    letterYear: $("#letterYear")?.value || String(new Date().getFullYear()), letterYearManual: loadSettings().letterYearManual === true
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
   if (window.haboubiAuth && window.haboubiAuth.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
@@ -837,7 +841,7 @@ $("#clearData").onclick = () => {
 };
 $("#saveSettings").onclick = saveSettings;
 $("#letterYear")?.addEventListener("change", () => {
-  const settings = loadSettings(); settings.letterYear = $("#letterYear").value;
+  const settings = loadSettings(); settings.letterYear = $("#letterYear").value; settings.letterYearManual = true;
   try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (_) {}
   state.settings = settings;
   if (window.haboubiAuth?.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
@@ -899,5 +903,5 @@ $("#aboutOk")?.addEventListener("click", closeAbout);
 aboutDialog?.addEventListener("click", event => { if (event.target === aboutDialog) closeAbout(); });
 const printAuthorizationButton = $("#printAuthorization"); if (printAuthorizationButton) printAuthorizationButton.onclick = () => printDocument("authorization");
 const printApologyButton = $("#printApology"); if (printApologyButton) printApologyButton.onclick = () => printDocument("apology");
-if ($("#letterYear") && !$("#letterYear").value) $("#letterYear").value = "2026";
+if ($("#letterYear") && !$("#letterYear").value) populateYearSelect($("#letterYear"), new Date().getFullYear());
 window.haboubiAppReady = restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });
