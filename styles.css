@@ -211,3 +211,10 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
  #printArea .auth-page,#printArea .apology-page{height:296mm!important;min-height:296mm!important;max-height:296mm!important;break-after:page!important;page-break-after:always!important}
  #printArea .official-page *{box-sizing:border-box}
 }
+
+/* Keep official signatures anchored at bottom-left, with year-only date below. */
+@media print{
+ #printArea .auth-page,#printArea .apology-page{position:relative!important}
+ #printArea .auth-page .fixed-signature,#printArea .apology-page .fixed-signature{position:absolute!important;left:12mm!important;right:auto!important;bottom:14mm!important;margin:0!important;text-align:left!important;line-height:1.8!important;font-size:12pt!important}
+ #printArea .fixed-signature .signature-date{margin-top:2mm;direction:ltr;unicode-bidi:isolate;text-align:left;white-space:pre}
+}
