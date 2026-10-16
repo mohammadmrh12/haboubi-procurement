@@ -21,10 +21,17 @@ assert.match(app, /data-edit-permanent/, 'search results should expose name edit
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
+
+assert.match(html, /styles\.css\?v=69/, 'updated input zoom CSS should be cache-busted');
+assert.match(html, /الإصدار 1\.3\.5/, 'website download label should match the published APK version');
+assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\) \|\| localOwner!==String\(user\.id\)/, 'switching accounts must refresh local data even when a tab marker exists');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.3\.5'/, 'in-app updater version must match the installed app version');
+
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v74/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=68', 'app.js?v=60', 'forms-addon.js?v=51', 'catalog-seed.js?v=30', 'auth.js?v=8']) {
+assert.match(sw, /haboubi-procurement-v75/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=69', 'app.js?v=60', 'forms-addon.js?v=51', 'catalog-seed.js?v=30', 'auth.js?v=9']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');

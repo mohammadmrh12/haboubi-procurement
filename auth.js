@@ -56,7 +56,10 @@
       const result=await api('/api/data');
       if(result.data){
         const marker='haboubi-sync-user-'+user.id;
-        if(!sessionStorage.getItem(marker)){
+        const localOwner=localStorage.getItem('haboubiLocalUserId');
+        // A per-tab marker is not enough: a different user may have logged in in this tab.
+        // Always replace local account data when its owner differs from the authenticated user.
+        if(!sessionStorage.getItem(marker) || localOwner!==String(user.id)){
           localStorage.setItem('haboubiDataV2',JSON.stringify({items:result.data.items||[],files:result.data.files||[]}));
           localStorage.setItem('haboubiSettings',JSON.stringify(result.data.settings||{}));
           localStorage.setItem('haboubiLocalUserId',String(user.id));
