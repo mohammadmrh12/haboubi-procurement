@@ -213,7 +213,7 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
  #printArea .official-page *{box-sizing:border-box}
  /* Keep committee approvals anchored lower on the estimate form, with room for signatures and stamp. */
  #printArea .cost-page{position:relative!important}
- #printArea .cost-page .committee-pair{position:absolute!important;left:12mm!important;right:12mm!important;top:145mm!important;margin:0!important;align-items:flex-start!important}
+ #printArea .cost-page .committee-pair{position:absolute!important;left:12mm!important;right:12mm!important;top:165mm!important;margin:0!important;align-items:flex-start!important}
  #printArea .cost-page .committee{width:49%!important;margin:0!important}
  #printArea .cost-page .committee table{margin-top:2mm!important}
  #printArea .cost-page .committee .chair-sign{display:block!important;margin-top:12mm!important;min-height:18mm!important;line-height:1.8!important}
