@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 28,
-  "appVersionName": "1.3.2",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.3.2-print-layout-fix",
+  "appVersionCode": 29,
+  "appVersionName": "1.3.3",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.3.3-remove-quantity-edit",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إصلاح تقسيم الاستمارات إلى صفحات زائدة مع الحفاظ على تحديث البيانات وثبات الواجهة."
+  "notes": "إزالة زر تعديل العدد من قائمة الاستمارات مع إبقاء الكمية للطباعة كما هي."
 }
