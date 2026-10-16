@@ -23,8 +23,8 @@ assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache ve
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v63/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=61', 'app.js?v=55', 'forms-addon.js?v=50', 'catalog-seed.js?v=30', 'auth.js?v=5']) {
+assert.match(sw, /haboubi-procurement-v64/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=62', 'app.js?v=56', 'forms-addon.js?v=50', 'catalog-seed.js?v=30', 'auth.js?v=5']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -41,3 +41,6 @@ assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /c\[2\]
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-add-direct/, "search results should allow direct addition to print page");
 
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-add-direct=\"\' \+ item\.id \+ \'\">إضافة مباشرة للطباعة/, "search result should visibly render the direct-to-print button");
+
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /أضيفت المادة إلى قائمة الطباعة/, "direct add should not force navigation to print view");
+assert.match(fs.readFileSync(path.join(root, "styles.css"), "utf8"), /direct-add-btn\{flex:0 0 100%/, "direct add should be a full-width bottom action");

@@ -490,7 +490,7 @@ function search() {
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
     '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') +
     '</div></div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
-    '</span><button class="mini-btn" data-add-direct="' + item.id + '">إضافة مباشرة للطباعة</button><button class="secondary mini-btn" data-item="' + item.id + '">تفاصيل المادة</button><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button></div></article>'
+    '</span><button class="secondary mini-btn" data-item="' + item.id + '">تفاصيل المادة</button><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button><button class="mini-btn direct-add-btn" data-add-direct="' + item.id + '">إضافة مباشرة للطباعة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
   $$("[data-add-direct]").forEach(button => button.onclick = () => addSearchResultDirect(Number(button.dataset.addDirect)));
@@ -509,7 +509,7 @@ function addSearchResultDirect(id) {
     const existing=state.documentItems.find(x=>x.code&&norm(x.code)===norm(item.code));
     const entry={...item,formName:item.permanentName||item.name,requested:qty,specification:item.dose||'',expected,period,aboveOfficialNeed:over,reviewAcknowledged:!!force};
     if(existing)Object.assign(existing,entry);else state.documentItems.push(entry);
-    renderDocItems();const nav=$('[data-view="documents"]');if(nav)nav.click();toast(needsReview?'أضيفت المادة للطباعة كمسودة مع تنبيه المراجعة.':'أضيفت المادة مباشرة إلى صفحة الطباعة.');
+    renderDocItems();toast(needsReview?'أضيفت المادة إلى قائمة الطباعة كمسودة مع تنبيه المراجعة. يمكنك إضافة مواد أخرى ثم الانتقال للطباعة يدوياً.':'أضيفت المادة إلى قائمة الطباعة. يمكنك إضافة مواد أخرى ثم الانتقال للطباعة يدوياً.');
   };
   if(over){if(!confirm('الكمية المحسوبة تتجاوز الاحتياج؟ راجع لجنة الصيدلة والعلاج. هل تريد المتابعة على أي حال؟')){selectItem(id);return;}add(true);return;}
   add(false);
