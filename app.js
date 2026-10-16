@@ -578,13 +578,19 @@ function renderDocItems() {
     return;
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td><input class="doc-name-edit" data-edit-name="' + i + '" aria-label="تعديل اسم المادة للطباعة" value="' + esc(x.formName || x.name) + '"></td><td class="code">' + esc(x.code || "غير مسجل") +
-      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
+    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell">' + esc(x.formName || x.name) + '</td><td class="code">' + esc(x.code || "غير مسجل") +
+      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل</button><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
-  $$("[data-edit-name]").forEach(input => input.addEventListener('input', () => {
-    const item = state.documentItems[Number(input.dataset.editName)];
-    if (item) item.formName = input.value;
-  }));
+  $$("[data-edit-name]").forEach(button => button.onclick = () => {
+    const index = Number(button.dataset.editName), item = state.documentItems[index];
+    if (!item) return;
+    const dialog = $("#editNameDialog"), input = $("#editMaterialName");
+    if (!dialog || !input) return;
+    $("#editNameIndex").value = String(index);
+    input.value = item.formName || item.name || "";
+    dialog.classList.remove("hidden");
+    input.focus(); input.select();
+  });
   $$("[data-remove]").forEach(button => button.onclick = () => {
     state.documentItems.splice(Number(button.dataset.remove),1); renderDocItems();
   });
@@ -783,6 +789,23 @@ $("#clearData").onclick = () => {
   }
 };
 $("#saveSettings").onclick = saveSettings;
+const editNameDialog = $("#editNameDialog");
+const closeEditNameDialog = () => editNameDialog?.classList.add("hidden");
+$("#editNameForm")?.addEventListener("submit", event => {
+  event.preventDefault();
+  const index = Number($("#editNameIndex")?.value);
+  const item = state.documentItems[index];
+  const name = $("#editMaterialName")?.value.trim();
+  if (!item || !name) { $("#editMaterialName")?.focus(); return; }
+  item.formName = name;
+  renderDocItems();
+  closeEditNameDialog();
+  toast("تم تحديث اسم المادة في الاستمارات المطبوعة.");
+});
+$("#closeEditName")?.addEventListener("click", closeEditNameDialog);
+$("#cancelEditName")?.addEventListener("click", closeEditNameDialog);
+editNameDialog?.addEventListener("click", event => { if (event.target === editNameDialog) closeEditNameDialog(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeEditNameDialog(); });
 const aboutDialog = $("#aboutDialog");
 const closeAbout = () => aboutDialog?.classList.add("hidden");
 $("#settingsBtn").onclick = () => aboutDialog?.classList.remove("hidden");

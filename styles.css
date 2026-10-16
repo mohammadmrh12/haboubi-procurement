@@ -177,6 +177,18 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 
 /* Mobile search and print-page material-name editing */
 .searchbox input{font-size:16px;min-height:44px}
-.doc-table .doc-name-edit{display:block;width:100%;min-width:0;box-sizing:border-box;border:1px solid #d8e2dd;border-radius:7px;padding:7px 6px;background:#fff;color:var(--ink);font:inherit;line-height:1.4;direction:auto}
+.doc-table .doc-name-cell{overflow-wrap:anywhere}
+.doc-table .doc-actions{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+.doc-table .doc-edit-btn{padding:7px 8px;font-size:12px;min-width:48px}
 .doc-table .doc-delete-btn{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;min-width:44px;padding:7px 5px;font-size:13px;line-height:1.2;flex-shrink:0}
 .doc-table td:last-child,.doc-table th:last-child{white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+
+/* Popup for changing a material's print-only name */
+.edit-name-dialog{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,25,23,.68);backdrop-filter:blur(4px)}
+.edit-name-dialog.hidden{display:none!important}
+.edit-name-card{position:relative;width:min(100%,420px);padding:28px 22px 22px;border:1px solid #d9e5e1;border-radius:18px;background:#fff;box-shadow:0 24px 80px #0003;color:var(--ink)}
+.edit-name-card h2{margin:0 0 8px;font-size:20px}
+.edit-name-card>p{margin:0 0 18px}
+.edit-name-card>label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}
+.edit-name-card input:not([type=hidden]){display:block;width:100%;min-height:48px;box-sizing:border-box;border:1px solid #cbd8d4;border-radius:10px;padding:10px 12px;font:inherit;font-size:16px;background:#fff;color:var(--ink)}
+.edit-name-close{position:absolute;top:8px;left:10px;border:0;background:transparent;font-size:27px;color:var(--muted);padding:2px 8px}
