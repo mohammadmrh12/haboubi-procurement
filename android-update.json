@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 23,
-  "appVersionName": "1.2.7",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.7",
+  "appVersionCode": 24,
+  "appVersionName": "1.2.8",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.2.8",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إصلاح تذكر تسجيل الدخول على Android"
+  "notes": "تحديث واجهة الطباعة: تثبيت مكان العدد وتحسين زر تعديل العدد وتحديث الواجهة"
 }
