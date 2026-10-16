@@ -23,10 +23,13 @@ assert.match(html, /app\.js\?v=\d+/, 'app asset should have an explicit cache ve
 assert.match(html, /forms-addon\.js\?v=\d+/, 'forms asset should have an explicit cache version');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v59/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=58', 'app.js?v=52', 'forms-addon.js?v=49', 'catalog-seed.js?v=30', 'auth.js?v=3']) {
+assert.match(sw, /haboubi-procurement-v60/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=59', 'app.js?v=52', 'forms-addon.js?v=49', 'catalog-seed.js?v=30', 'auth.js?v=4']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /<textarea id="editMaterialName"/, "long material names should use a multiline editor");
+
+assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /textContent='تعديل'/, "history has an edit action");
+assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /textContent='طباعة'/, "history has a print action");

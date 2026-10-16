@@ -237,3 +237,10 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 /* Use a multiline editor so the complete long material name is visible at once. */
 .edit-name-card textarea#editMaterialName{display:block;width:100%;min-height:clamp(180px,30vh,300px);height:clamp(180px,30vh,300px);box-sizing:border-box;border:1px solid #cbd8d4;border-radius:10px;padding:14px 12px;font:inherit;font-size:18px;line-height:1.65;background:#fff;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;resize:vertical;direction:auto;text-align:start;overflow-y:auto}
 @media(max-width:600px){.edit-name-dialog{align-items:center;padding:12px}.edit-name-card{padding:28px 18px 20px;max-height:calc(100dvh - 24px)}.edit-name-card textarea#editMaterialName{min-height:clamp(190px,28vh,280px);height:clamp(190px,28vh,280px);font-size:17px}}
+
+.history-edit-card{width:min(100%,760px);max-height:calc(100dvh - 24px);overflow:auto}
+.history-edit-card>label{display:block;margin:10px 0 4px;font-weight:700;font-size:13px}
+.history-edit-card input{width:100%;min-height:42px;box-sizing:border-box;border:1px solid #cbd8d4;border-radius:9px;padding:9px 10px;font:inherit;font-size:16px}
+.history-edit-row{border:1px solid #d9e5e1;border-radius:10px;padding:12px;margin:12px 0}
+.history-edit-row legend{font-weight:700;padding:0 6px}
+.history-edit-row label{display:block;margin:8px 0;font-size:13px;font-weight:600}
