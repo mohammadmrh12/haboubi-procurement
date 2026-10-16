@@ -197,3 +197,15 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .doc-name-cell .doc-name-text{display:block;overflow-wrap:anywhere;line-height:1.65}
 .doc-name-cell .doc-edit-btn{display:block;margin:6px 0 0 auto;white-space:nowrap;padding:5px 10px;font-size:12px}
 .history-actions{flex-wrap:wrap}
+
+/* Make history deletion unmistakably visible on mobile and desktop. */
+.history-actions .history-delete-btn{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 15px;border:1px solid #b4232d;border-radius:9px;background:#b4232d;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;line-height:1.2;flex-shrink:0}
+.history-actions .history-delete-btn:disabled{opacity:.55}
+@media print{
+ @page{size:A4 portrait;margin:0}
+ html,body{margin:0!important;padding:0!important;width:210mm}
+ #printArea{width:210mm!important;margin:0!important;padding:0!important}
+ #printArea .official-page{height:auto!important;min-height:0!important;max-height:none!important;width:210mm!important;overflow:visible!important;box-sizing:border-box!important;break-inside:avoid!important;page-break-inside:avoid!important;margin:0!important}
+ #printArea .official-page:not(:last-child){break-after:page!important;page-break-after:always!important}
+ #printArea .official-page:last-child{break-after:auto!important;page-break-after:auto!important}
+}
