@@ -164,6 +164,17 @@ const server=http.createServer(async (req,res)=>{
       } catch { json(res,500,{error:'تعذر قراءة سجل العمليات؛ لم يتم استبدال السجل'}); }
       return;
     }
+    if(req.method==='DELETE' && url.pathname==='/api/history'){
+      const id=String(url.searchParams.get('id')||'').slice(0,100);
+      if(!id){json(res,400,{error:'معرّف العملية مطلوب'});return;}
+      try {
+        const rows=readHistory();
+        const index=rows.findIndex(row=>row.id===id && row.userId===user.id);
+        if(index<0){json(res,404,{error:'العملية غير موجودة في سجل هذا المستخدم'});return;}
+        rows.splice(index,1);writeHistory(rows);json(res,200,{ok:true});
+      } catch { json(res,500,{error:'تعذر حذف العملية؛ سجل العمليات الحالي محفوظ ولم يتم استبداله'}); }
+      return;
+    }
     if(req.method==='POST' && url.pathname==='/api/history'){
       let body; try{body=await readBody(req);}catch(e){json(res,400,{error:e.message});return;}
       const kind=['اعتذار','تخويل','اعتذار وتخويل','حزمة مستندات'].includes(body.kind)?body.kind:'اعتذار وتخويل';

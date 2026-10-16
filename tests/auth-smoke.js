@@ -57,6 +57,11 @@ async function freePort() {
     assert.equal(response.status, 201, 'history operation saved');
     const saved = (await response.json()).item;
     assert.equal(saved.userId, 1);
+    response = await fetch(`${base}/api/history?id=${encodeURIComponent(saved.id)}`, { method: 'DELETE', headers: { cookie } });
+    assert.equal(response.status, 200, 'owner can delete own history item');
+    response = await fetch(`${base}/api/history`, { headers: { cookie } });
+    assert.equal((await response.json()).items.some(item => item.id === saved.id), false, 'deleted history item is gone');
+
     response = await fetch(`${base}/api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: '2222', remember: true }) });
     const cookie2 = (response.headers.get('set-cookie') || '').split(';')[0];
     response = await fetch(`${base}/api/history`, { headers: { cookie: cookie2 } });

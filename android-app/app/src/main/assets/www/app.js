@@ -578,8 +578,8 @@ function renderDocItems() {
     return;
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell">' + esc(x.formName || x.name) + '</td><td class="code">' + esc(x.code || "غير مسجل") +
-      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل</button><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
+    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل</button></td><td class="code">' + esc(x.code || "غير مسجل") +
+      '</td><td>' + fmt(x.requested) + '</td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
   $$("[data-edit-name]").forEach(button => button.onclick = () => {
     const index = Number(button.dataset.editName), item = state.documentItems[index];
