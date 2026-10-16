@@ -22,7 +22,7 @@ const startPrint=(viewId,areaId,html,printWindow=null)=>{
   return;
  }
  if(printWindow&&!printWindow.closed){
-  const css=new URL('styles.css?v=73',location.href).href;
+  const css=new URL('styles.css?v=74',location.href).href;
   printWindow.document.open();
   printWindow.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>معاينة وطباعة — مستشفى الحبوبي</title><link rel="stylesheet" href="'+css+'"><style>html,body{margin:0;background:#fff}body{direction:rtl}.view.printing{display:block!important}.view.printing>#printArea{display:block!important}#printArea{background:#fff;color:#111}@media screen{body{padding:12px}.print-actions{position:sticky;top:0;background:#fff;padding:10px;text-align:center;border-bottom:1px solid #ddd;z-index:2}.print-actions button{font-size:17px;padding:12px 24px;background:#123c35;color:#fff;border:0;border-radius:10px}.official-page{margin:12px auto;box-shadow:0 1px 8px #bbb}}</style></head><body><div class="print-actions"><button id="printNow" type="button">طباعة / حفظ PDF</button><p>إذا لم تظهر نافذة الطباعة تلقائياً، اضغط الزر أعلاه.</p></div><section class="view printing"><div id="printArea">'+html+'</div></section></body></html>');
   printWindow.document.close();

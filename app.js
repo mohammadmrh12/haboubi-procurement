@@ -332,6 +332,8 @@ async function restoreData() {
   try { settings = JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch (_) {}
   state.settings = settings;
   Object.entries(settings).forEach(([key,value]) => { const el = $("#" + key); if (el && key !== "letterYear") el.value = value; });
+  const authorizedNameInput = $("#authorizedName"); if (authorizedNameInput && settings.authorizedName) authorizedNameInput.value = settings.authorizedName;
+  const storekeeperNameInput = $("#storekeeperName"); if (storekeeperNameInput && settings.storekeeperName) storekeeperNameInput.value = settings.storekeeperName;
   const yearSelect = $("#letterYear");
   if (yearSelect) {
     populateYearSelect(yearSelect, settings.letterYearManual === true ? settings.letterYear : new Date().getFullYear());
@@ -688,11 +690,13 @@ function printDocument(type) {
   setTimeout(() => { div.remove(); view.classList.remove("printing"); }, 600);
 }
 function saveSettings() {
+  const existingSettings = loadSettings();
   const settings = {
+    ...existingSettings,
     hospitalName: $("#hospitalName").value, authRecipient: $("#authRecipient").value,
     apologyRecipient: $("#apologyRecipient").value, directorName: $("#directorName").value,
     pharmacistName: $("#pharmacistName").value, pharmacyHeadName: $("#pharmacyHeadName").value.trim() || "علي شكري العبادي",
-    letterYear: $("#letterYear")?.value || String(new Date().getFullYear()), letterYearManual: loadSettings().letterYearManual === true
+    letterYear: $("#letterYear")?.value || String(new Date().getFullYear()), letterYearManual: existingSettings.letterYearManual === true
   };
   localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); state.settings = settings;
   if (window.haboubiAuth && window.haboubiAuth.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
@@ -840,6 +844,59 @@ $("#clearData").onclick = () => {
   }
 };
 $("#saveSettings").onclick = saveSettings;
+const namePickerDialog = $("#namePickerDialog");
+let activeNamePicker = "authorized";
+const namePickerConfig = {
+  authorized: { input: "#authorizedName", list: "authorizedNames", title: "اختيار المخوّل", button: "اختيار مخوّل" },
+  storekeeper: { input: "#storekeeperName", list: "storekeeperNames", title: "اختيار أمين المخزن", button: "اختيار أمين مخزن" }
+};
+const closeNamePicker = () => { namePickerDialog?.classList.add("hidden"); $("#newSavedName").value = ""; };
+function persistNameLists(settings) {
+  try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (error) { toast("تعذر حفظ الأسماء على هذا الجهاز"); return false; }
+  state.settings = settings;
+  if (window.haboubiAuth?.user) window.haboubiAuth.scheduleDataSave({ items: state.items, files: state.files, settings });
+  return true;
+}
+function renderSavedNameList() {
+  const config = namePickerConfig[activeNamePicker], list = $("#savedNameList");
+  if (!config || !list) return;
+  const settings = loadSettings(), names = Array.isArray(settings[config.list]) ? settings[config.list] : [];
+  list.replaceChildren();
+  if (!names.length) { const empty = document.createElement("div"); empty.className = "saved-name-empty"; empty.textContent = "لا توجد أسماء محفوظة لهذا المستخدم بعد."; list.append(empty); return; }
+  names.forEach(name => {
+    const button = document.createElement("button"); button.type = "button"; button.className = "saved-name-option"; button.textContent = name;
+    button.addEventListener("click", () => {
+      const input = $(config.input); if (input) { input.value = name; input.dispatchEvent(new Event("change", { bubbles: true })); }
+      closeNamePicker();
+    });
+    list.append(button);
+  });
+}
+document.querySelectorAll("[data-name-picker]").forEach(button => button.addEventListener("click", () => {
+  activeNamePicker = button.dataset.namePicker === "storekeeper" ? "storekeeper" : "authorized";
+  const config = namePickerConfig[activeNamePicker];
+  $("#namePickerTitle").textContent = config.title;
+  $("#namePickerDescription").textContent = "اختر اسماً محفوظاً لهذا المستخدم أو أضف اسماً جديداً.";
+  renderSavedNameList(); namePickerDialog.classList.remove("hidden"); $("#newSavedName").focus();
+}));
+$("#namePickerForm")?.addEventListener("submit", event => {
+  event.preventDefault();
+  const config = namePickerConfig[activeNamePicker], input = $("#newSavedName"), name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  const settings = loadSettings(), names = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
+  const existing = names.find(value => value.localeCompare(name, "ar", { sensitivity: "base" }) === 0);
+  if (!existing) names.push(name);
+  settings[config.list] = names;
+  if (!persistNameLists(settings)) return;
+  const field = $(config.input); if (field) { field.value = existing || name; field.dispatchEvent(new Event("change", { bubbles: true })); }
+  input.value = ""; renderSavedNameList(); toast(existing ? "الاسم محفوظ مسبقاً" : "تمت إضافة الاسم لهذا المستخدم فقط");
+});
+$("#closeNamePicker")?.addEventListener("click", closeNamePicker);
+$("#cancelNamePicker")?.addEventListener("click", closeNamePicker);
+namePickerDialog?.addEventListener("click", event => { if (event.target === namePickerDialog) closeNamePicker(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeNamePicker(); });
+$("#authorizedName")?.addEventListener("change", () => { const name = $("#authorizedName").value.trim(); if (name) { const settings = loadSettings(); settings.authorizedName = name; persistNameLists(settings); } });
+$("#storekeeperName")?.addEventListener("change", () => { const name = $("#storekeeperName").value.trim(); if (name) { const settings = loadSettings(); settings.storekeeperName = name; persistNameLists(settings); } });
 $("#letterYear")?.addEventListener("change", () => {
   const settings = loadSettings(); settings.letterYear = $("#letterYear").value; settings.letterYearManual = true;
   try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (_) {}
