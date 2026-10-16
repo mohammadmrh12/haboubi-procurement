@@ -253,3 +253,10 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .result-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px;max-width:100%}
 .result-actions .direct-add-btn{flex:0 0 100%;width:100%;min-height:44px;white-space:normal;max-width:none;order:10}
 @media(max-width:850px){.result-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.result-actions .qty-chip{grid-column:1/-1;justify-self:end}.result-actions .mini-btn{width:100%;min-width:0;white-space:normal;line-height:1.5}.result-actions .direct-add-btn{grid-column:1/-1;grid-row:auto;min-height:46px}}
+
+/* Align row actions to the bottom edge of each material row on narrow screens. */
+#documentItems tbody tr{vertical-align:bottom}
+#documentItems .doc-name-cell,#documentItems .quantity-edit-cell{vertical-align:bottom}
+#documentItems .doc-edit-btn,#documentItems .doc-qty-edit-btn{margin-top:8px;display:block}
+#documentItems .quantity-edit-cell{padding-bottom:12px}
+#documentItems .doc-name-cell{padding-bottom:12px}

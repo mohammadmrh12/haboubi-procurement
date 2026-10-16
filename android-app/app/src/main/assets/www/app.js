@@ -601,7 +601,7 @@ function renderDocItems() {
     return;
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل</button></td><td class="code">' + esc(x.code || "غير مسجل") +
+    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل الاسم</button></td><td class="code">' + esc(x.code || "غير مسجل") +
       '</td><td class="quantity-edit-cell"><span>' + fmt(x.requested) + '</span><button type="button" class="secondary doc-qty-edit-btn" data-edit-qty="' + i + '">تعديل العدد</button></td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
   $$("[data-edit-name]").forEach(button => button.onclick = () => {
