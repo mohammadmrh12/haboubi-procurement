@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 46,
-  "appVersionName": "1.5.0",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.0-name-picker-focus",
+  "appVersionCode": 47,
+  "appVersionName": "1.5.1",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.1-name-actions",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إصلاح اختيار المخوّل وأمين المخزن: فتح نافذة اختيار الاسم دون نقل التركيز تلقائياً إلى حقل الكتابة أو إظهار لوحة المفاتيح، لتسهيل اختيار اسم محفوظ أولاً."
+  "notes": "إضافة خياري تعديل وحذف مقابل كل اسم محفوظ للمخوّل وأمين المخزن، بمحاذاة نهاية السطر من اليسار. تبقى إدارة الأسماء منفصلة حسب المستخدم."
 }

@@ -303,6 +303,11 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .name-picker-card>label{display:block;font-weight:700;margin:16px 0 6px}
 .name-picker-card input#newSavedName{display:block;width:100%;min-height:46px;border:1px solid #cbd8d4;border-radius:10px;padding:10px 12px;font:inherit;font-size:16px;background:#fff;color:var(--ink)}
 .saved-name-list{display:grid;gap:8px;max-height:min(38dvh,300px);overflow:auto;margin:14px 0}
-.saved-name-option{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;text-align:right;border:1px solid #d8e5df;border-radius:10px;padding:10px 12px;background:#f9fcfa;color:var(--ink);font:inherit;font-weight:700;overflow-wrap:anywhere}
+.saved-name-row{display:flex;align-items:stretch;gap:6px;min-width:0}
+.saved-name-option{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:1;min-width:0;min-height:46px;text-align:right;border:1px solid #d8e5df;border-radius:10px;padding:10px 12px;background:#f9fcfa;color:var(--ink);font:inherit;font-weight:700;overflow-wrap:anywhere}
+.saved-name-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.saved-name-action{min-height:38px;padding:6px 9px;border:1px solid #d8e5df;border-radius:8px;background:#fff;font:inherit;font-size:12px;font-weight:800;white-space:nowrap}
+.saved-name-action.edit{color:#145b47}
+.saved-name-action.delete{color:#a32222;border-color:#edcaca}
 .saved-name-option:active,.saved-name-option:hover{border-color:var(--green);background:var(--green2)}
 .saved-name-empty{padding:18px 12px;text-align:center;border:1px dashed #cbd8d4;border-radius:10px;color:var(--muted);font-size:13px}

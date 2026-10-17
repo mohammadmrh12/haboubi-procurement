@@ -1169,13 +1169,34 @@ function renderSavedNameList() {
   const settings = loadSettings(), names = Array.isArray(settings[config.list]) ? settings[config.list] : [];
   list.replaceChildren();
   if (!names.length) { const empty = document.createElement("div"); empty.className = "saved-name-empty"; empty.textContent = "لا توجد أسماء محفوظة لهذا المستخدم بعد."; list.append(empty); return; }
-  names.forEach(name => {
+  names.forEach((name, index) => {
+    const row = document.createElement("div"); row.className = "saved-name-row";
     const button = document.createElement("button"); button.type = "button"; button.className = "saved-name-option"; button.textContent = name;
     button.addEventListener("click", () => {
       const input = $(config.input); if (input) { input.value = name; input.dispatchEvent(new Event("change", { bubbles: true })); }
       closeNamePicker();
     });
-    list.append(button);
+    const actions = document.createElement("div"); actions.className = "saved-name-actions";
+    const edit = document.createElement("button"); edit.type = "button"; edit.className = "saved-name-action edit"; edit.textContent = "تعديل"; edit.setAttribute("aria-label", `تعديل ${name}`);
+    edit.addEventListener("click", () => {
+      const replacement = prompt("تعديل الاسم المحفوظ:", name);
+      if (replacement === null) return;
+      const updated = replacement.trim();
+      if (!updated) { toast("الاسم لا يمكن أن يكون فارغاً"); return; }
+      const settings = loadSettings(), current = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
+      const duplicate = current.some((value, i) => i !== index && value.localeCompare(updated, "ar", { sensitivity: "base" }) === 0);
+      if (duplicate) { toast("هذا الاسم موجود مسبقاً"); return; }
+      current[index] = updated; settings[config.list] = current;
+      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم تعديل الاسم المحفوظ"); }
+    });
+    const remove = document.createElement("button"); remove.type = "button"; remove.className = "saved-name-action delete"; remove.textContent = "حذف"; remove.setAttribute("aria-label", `حذف ${name}`);
+    remove.addEventListener("click", () => {
+      if (!confirm(`حذف الاسم المحفوظ «${name}»؟`)) return;
+      const settings = loadSettings(), current = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
+      current.splice(index, 1); settings[config.list] = current;
+      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم حذف الاسم المحفوظ"); }
+    });
+    actions.append(edit, remove); row.append(button, actions); list.append(row);
   });
 }
 document.querySelectorAll("[data-name-picker]").forEach(button => button.addEventListener("click", () => {
