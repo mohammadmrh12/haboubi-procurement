@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 43,
-  "appVersionName": "1.4.7",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.7-financial-step-six",
+  "appVersionCode": 44,
+  "appVersionName": "1.4.8",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.8-step-four-layout",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إضافة الخطوة السادسة إلى استمارة التخصيص المالي لتأييد تشكيل الرقابة والتدقيق الداخلي على صحة الإجراءات للخطوات السابقة، مع ثلاثة أسطر للتوقيع أو الملاحظات."
+  "notes": "تحسين تنسيق الخطوة الرابعة: تكبير مربع التخصيص المالي وحقل الاسم بين القوسين، ونقل اسم وتوقيع المحاسب إلى الطرف الأيسر أعلى قليلاً لتوفير مساحة للتوقيع."
 }

@@ -71,10 +71,11 @@
   .committee{margin-top:20mm;display:flex;flex-direction:column;align-items:flex-end;gap:2mm;font-size:10pt}
   .committee table{width:60%;border-collapse:collapse;margin-top:2mm}.committee th,.committee td{border:1px solid #666;height:10mm;text-align:center;padding:1mm}.committee .chair-sign{margin-top:13mm}
   .blank-finance-page{padding:16mm 19mm}
-  .allocation-box{border:1px solid #666;height:43mm;padding:5mm;position:relative;margin-top:0;font-size:11pt}
+  .allocation-box{border:1px solid #666;height:58mm;padding:6mm;position:relative;margin-top:0;font-size:11pt}
   .allocation-box> b:first-child,.approval>b:first-child{display:block;text-align:right;text-decoration:underline;font-size:15pt;margin-bottom:4mm}
   .allocation-box h3,.approval h3{font-size:12pt;margin:0 0 4mm;text-align:right}
-  .box-sign{position:absolute;bottom:5mm;right:14mm}
+  .box-sign{position:absolute;bottom:11mm;left:14mm;right:auto;font-size:11pt}
+  .allocation-recipient{display:inline-block;font-size:16pt;font-weight:700;line-height:1.4;min-width:48mm;text-align:center;vertical-align:middle}
   .approval{margin-top:38mm;text-align:right}
   .approval-box{border:1px solid #666;width:58%;height:29mm;margin:5mm auto 0}
   .internal-audit{margin-top:23mm;text-align:right;font-size:10.5pt;line-height:1.6}
