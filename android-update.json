@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 47,
-  "appVersionName": "1.5.1",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.1-name-actions",
+  "appVersionCode": 48,
+  "appVersionName": "1.5.2",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.2-shared-names",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إضافة خياري تعديل وحذف مقابل كل اسم محفوظ للمخوّل وأمين المخزن، بمحاذاة نهاية السطر من اليسار. تبقى إدارة الأسماء منفصلة حسب المستخدم."
+  "notes": "توحيد قائمة الأسماء المحفوظة للمخوّل وأمين المخزن. أي اسم محفوظ في إحدى القائمتين يظهر في الأخرى، وإضافة الاسم أو تعديله أو حذفه ينعكس على القائمتين لهذا المستخدم."
 }

@@ -1166,7 +1166,12 @@ function persistNameLists(settings) {
 function renderSavedNameList() {
   const config = namePickerConfig[activeNamePicker], list = $("#savedNameList");
   if (!config || !list) return;
-  const settings = loadSettings(), names = Array.isArray(settings[config.list]) ? settings[config.list] : [];
+  const settings = loadSettings();
+  const authorized = Array.isArray(settings.authorizedNames) ? settings.authorizedNames : [];
+  const storekeepers = Array.isArray(settings.storekeeperNames) ? settings.storekeeperNames : [];
+  const names = [...authorized, ...storekeepers].filter((name, index, all) =>
+    all.findIndex(value => value.localeCompare(name, "ar", { sensitivity: "base" }) === 0) === index
+  );
   list.replaceChildren();
   if (!names.length) { const empty = document.createElement("div"); empty.className = "saved-name-empty"; empty.textContent = "لا توجد أسماء محفوظة لهذا المستخدم بعد."; list.append(empty); return; }
   names.forEach((name, index) => {
@@ -1186,15 +1191,22 @@ function renderSavedNameList() {
       const settings = loadSettings(), current = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
       const duplicate = current.some((value, i) => i !== index && value.localeCompare(updated, "ar", { sensitivity: "base" }) === 0);
       if (duplicate) { toast("هذا الاسم موجود مسبقاً"); return; }
-      current[index] = updated; settings[config.list] = current;
-      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم تعديل الاسم المحفوظ"); }
+      current[index] = updated;
+      const allNames = [...(Array.isArray(settings.authorizedNames) ? settings.authorizedNames : []), ...(Array.isArray(settings.storekeeperNames) ? settings.storekeeperNames : [])];
+      const merged = allNames.filter((value, i, all) => all.findIndex(other => other.localeCompare(value, "ar", { sensitivity: "base" }) === 0) === i);
+      const oldName = name;
+      const shared = merged.map(value => value === oldName ? updated : value);
+      settings.authorizedNames = shared.slice(); settings.storekeeperNames = shared.slice();
+      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم تعديل الاسم في قائمتي المخوّل وأمين المخزن"); }
     });
     const remove = document.createElement("button"); remove.type = "button"; remove.className = "saved-name-action delete"; remove.textContent = "حذف"; remove.setAttribute("aria-label", `حذف ${name}`);
     remove.addEventListener("click", () => {
       if (!confirm(`حذف الاسم المحفوظ «${name}»؟`)) return;
-      const settings = loadSettings(), current = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
-      current.splice(index, 1); settings[config.list] = current;
-      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم حذف الاسم المحفوظ"); }
+      const settings = loadSettings();
+      const allNames = [...(Array.isArray(settings.authorizedNames) ? settings.authorizedNames : []), ...(Array.isArray(settings.storekeeperNames) ? settings.storekeeperNames : [])];
+      const current = allNames.filter((value, i, all) => all.findIndex(other => other.localeCompare(value, "ar", { sensitivity: "base" }) === 0) === i && value !== name);
+      settings.authorizedNames = current.slice(); settings.storekeeperNames = current.slice();
+      if (persistNameLists(settings)) { renderSavedNameList(); toast("تم حذف الاسم من قائمتي المخوّل وأمين المخزن"); }
     });
     actions.append(edit, remove); row.append(button, actions); list.append(row);
   });
@@ -1210,10 +1222,12 @@ $("#namePickerForm")?.addEventListener("submit", event => {
   event.preventDefault();
   const config = namePickerConfig[activeNamePicker], input = $("#newSavedName"), name = input.value.trim();
   if (!name) { input.focus(); return; }
-  const settings = loadSettings(), names = Array.isArray(settings[config.list]) ? settings[config.list].slice() : [];
+  const settings = loadSettings();
+  const names = [...(Array.isArray(settings.authorizedNames) ? settings.authorizedNames : []), ...(Array.isArray(settings.storekeeperNames) ? settings.storekeeperNames : [])]
+    .filter((value, index, all) => all.findIndex(other => other.localeCompare(value, "ar", { sensitivity: "base" }) === 0) === index);
   const existing = names.find(value => value.localeCompare(name, "ar", { sensitivity: "base" }) === 0);
   if (!existing) names.push(name);
-  settings[config.list] = names;
+  settings.authorizedNames = names.slice(); settings.storekeeperNames = names.slice();
   if (!persistNameLists(settings)) return;
   const field = $(config.input); if (field) { field.value = existing || name; field.dispatchEvent(new Event("change", { bubbles: true })); }
   input.value = ""; renderSavedNameList(); toast(existing ? "الاسم محفوظ مسبقاً" : "تمت إضافة الاسم لهذا المستخدم فقط");
