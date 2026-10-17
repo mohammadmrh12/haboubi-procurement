@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 44,
-  "appVersionName": "1.4.8",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.8-step-four-layout",
+  "appVersionCode": 45,
+  "appVersionName": "1.4.9",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.9-contract-table-layout",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "تحسين تنسيق الخطوة الرابعة: تكبير مربع التخصيص المالي وحقل الاسم بين القوسين، ونقل اسم وتوقيع المحاسب إلى الطرف الأيسر أعلى قليلاً لتوفير مساحة للتوقيع."
+  "notes": "تكبير إضافي لمربع الخطوة الرابعة وحقل الاسم بين القوسين. في تأييد قسم العقود: توسيع عمود الإيميل، تقليل عرض اسم المورد والملاحظات، وزيادة ارتفاع صفوف الجدول."
 }

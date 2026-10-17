@@ -1,6 +1,6 @@
 (() => {
   const MANIFEST_URL='https://medstock.cinematicplus.online/android-update.json';
-  const APP_VERSION='1.4.8';
+  const APP_VERSION='1.4.9';
   const CATALOG_KEY='haboubiCatalogVersionV1';
   const $=s=>document.querySelector(s);
 
