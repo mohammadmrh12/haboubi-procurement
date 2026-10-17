@@ -11,11 +11,32 @@ const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 assert.match(app, /id="formItemName"/, 'item details should expose an editable form name');
 assert.match(app, /formName:\s*clean\(\$\("#formItemName"\)\.value\)\s*\|\|\s*item\.permanentName\s*\|\|\s*item\.name/, 'form name should default to persistent override when set');
 assert.match(app, /esc\(x\.formName\s*\|\|\s*x\.name\)/, 'document item list should use shortened name when present');
-assert.match(forms, /const items=\(\)=>.*name:printableName\(c\[0\]\?\.querySelector\('\.doc-name-text'\)/, 'print packet should read the displayed material name from the document table');
-assert.match(forms, /const printableName=value=>[\s\S]*?\.filter\(line=>line && \/\[A-Za-z0-9\]\/\.test\(line\)\)/, 'shared print path should remove Arabic annotations from printed names only');
-{ const vm = require('node:vm'); const helper = forms.match(/const printableName=value=>[\s\S]*?trim\(\);/)[0]; const ctx={}; vm.createContext(ctx); vm.runInContext(helper+';this.clean=printableName;',ctx); const source='Amphotericin lipid complex 100mg vial قاعدة اقل الاسعار (05-C00-041) (05-C00-036)'; assert.equal(ctx.clean(source), 'Amphotericin lipid complex 100mg vial', 'printed material name should omit price-rule note and linked national-code annotations'); const salbutamol='Salbutamol Nebules 0.5% w/v 20ml لامانع من اعتماد المادة الفعالة بشكل sulphate or base'; assert.ok(!/[\u0600-\u06FF]/.test(ctx.clean(salbutamol)), 'printed material names must not contain Arabic committee annotations'); assert.ok(ctx.clean(salbutamol).includes('Salbutamol Nebules 0.5% w/v 20ml'), 'scientific name and dose must remain in print'); assert.ok(source.includes('قاعدة اقل الاسعار'), 'source/database value must remain unchanged'); }
-assert.match(app, /function printableMaterialName\(value\)[\s\S]*?filter\(line => line && \/\[A-Za-z0-9\]\/\.test\(line\)\)/, 'legacy print path should remove Arabic annotations from printed names only');
+assert.match(forms, /const items=\(\)=>.*const label=c\[0\]\?\.querySelector\('\.doc-name-text'\)/, 'print packet should read the displayed material name from the document table');
+assert.match(forms, /const printableName=value=>[\s\S]*?trim\(\)\};/, 'shared print path should remove Arabic annotations from printed names only');
+{ const vm = require('node:vm'); const helper = forms.match(/const printableName=value=>[\s\S]*?trim\(\)\};/)[0]; const ctx={}; vm.createContext(ctx); vm.runInContext(helper+';this.clean=printableName;',ctx); const source='Amphotericin lipid complex 100mg vial قاعدة اقل الاسعار (05-C00-041) (05-C00-036)'; assert.equal(ctx.clean(source), 'Amphotericin lipid complex 100mg vial', 'printed material name should omit price-rule note and linked national-code annotations'); const salbutamol='Salbutamol Nebules 0.5% w/v 20ml لامانع من اعتماد المادة الفعالة بشكل sulphate or base'; assert.ok(!/[\u0600-\u06FF]/.test(ctx.clean(salbutamol)), 'printed material names must not contain Arabic committee annotations'); assert.ok(ctx.clean(salbutamol).includes('Salbutamol Nebules 0.5% w/v 20ml'), 'scientific name and dose must remain in print'); assert.ok(source.includes('قاعدة اقل الاسعار'), 'source/database value must remain unchanged'); assert.equal(ctx.clean('مشرط جراحي'), 'مشرط جراحي', 'Arabic-only scientific/material names should remain printable'); }
+assert.match(app, /function printableMaterialName\(value\)[\s\S]*?return text\.replace/, 'legacy print path should remove Arabic annotations from printed names only');
 assert.match(forms, /قاعدة\\s\*\[اأ\]\?قل\\s\*الأسعار/, 'price-rule label should be removed from printed material names');
+
+{
+  const vm = require('node:vm');
+  const start = app.indexOf('// Review metadata is derived at runtime');
+  const end = app.indexOf('function search() {', start);
+  assert.ok(start >= 0 && end > start, 'review grouping helpers should exist');
+  const source = app.slice(start, end);
+  const ctx = { state: { items: [] }, norm: value => String(value ?? '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/[^\p{L}\p{N}]+/gu, ' ').trim() };
+  vm.createContext(ctx); vm.runInContext(source, ctx);
+  const zero = {id:1,name:'Amphotericin lipid complex 100mg vial قاعدة اقل الاسعار (05-C00-041)',annual:0,kind:'drug',unit:'vial',dose:'100 mg'};
+  const positive = {id:2,name:'Amphotericin lipid complex 100mg vial',annual:12,kind:'drug',unit:'vial',dose:'100 mg'};
+  ctx.state.items = [zero, positive];
+  assert.equal(ctx.preferredNeedRecord(zero).id, 2, 'same-spec duplicate should prefer positive need over a zero-need first record');
+  assert.match(ctx.reviewAlertText(zero), /لم تُجمع الاحتياجات/, 'duplicate alert must explicitly state needs are not summed');
+  assert.equal(zero.annual, 0); assert.equal(positive.annual, 12, 'original annual needs must remain unchanged');
+  const different = {...positive, id:3, name:'Amphotericin lipid complex 50mg vial', dose:'50 mg', annual:5};
+  ctx.state.items = [positive, different];
+  assert.match(ctx.reviewAlertText(positive), /لا تُدمج تلقائياً/, 'different strength/specification must remain for review');
+  assert.equal(ctx.preferredNeedRecord(positive).id, 2, 'different specification must not be merged or selected as an equivalent');
+}
+
 assert.match(app, /data-edit-name/, 'document item list should expose a dedicated edit button');
 assert.match(html, /id=\"editNameDialog\"/, 'print name editing should use a popup dialog');
 assert.match(html, /id=\"savePermanentName\"/, 'popup should support per-user permanent name changes');
@@ -23,11 +44,11 @@ assert.match(html, /id=\"restoreOriginalName\"/, 'popup should support restoring
 assert.match(app, /bundled\.permanentName = item\.permanentName/, 'per-user name overrides should survive merging the bundled catalog');
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
-assert.match(html, /app\.js\?v=71/, 'app asset should have an explicit cache version');
-assert.match(html, /forms-addon\.js\?v=57/, 'forms asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=72/, 'app asset should have an explicit cache version');
+assert.match(html, /forms-addon\.js\?v=58/, 'forms asset should have an explicit cache version');
 
 assert.match(html, /styles\.css\?v=74/, 'updated input zoom CSS should be cache-busted');
-assert.match(html, /الإصدار 1\.4\.2/, 'website download label should match the published APK version');
+assert.match(html, /الإصدار 1\.4\.3/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
@@ -35,13 +56,13 @@ assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new UR
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.style\.setProperty\('page-break-after','avoid','important'\)/, 'print generation must explicitly suppress a trailing blank page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\) \|\| localOwner!==String\(user\.id\)/, 'switching accounts must refresh local data even when a tab marker exists');
-assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.4\.2'/, 'in-app updater version must match the installed app version');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.4\.3'/, 'in-app updater version must match the installed app version');
 
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v89/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=74', 'drug-aliases.js?v=2', 'app.js?v=71', 'forms-addon.js?v=57', 'catalog-seed.js?v=30', 'auth.js?v=11']) {
+assert.match(sw, /haboubi-procurement-v90/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=74', 'drug-aliases.js?v=2', 'app.js?v=72', 'forms-addon.js?v=58', 'catalog-seed.js?v=30', 'auth.js?v=11']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');

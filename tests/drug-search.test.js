@@ -20,9 +20,12 @@ const rankStart = app.indexOf('  const hits = state.items.map((item, index) => {
 const rankEnd = app.indexOf('  if (!hits.length)', rankStart);
 assert.ok(rankStart >= 0 && rankEnd > rankStart, 'search result ranking block should exist');
 const rankingCode = app.slice(rankStart, rankEnd).replace(/^  /gm, '');
+const reviewStart = app.indexOf('// Review metadata is derived at runtime');
+const reviewEnd = app.indexOf('function search() {', reviewStart);
+const reviewHelpers = app.slice(reviewStart, reviewEnd);
 const rankContext = { state: {items:[]}, query:'', translatedTerms:[], scoreItem:context.score, norm: value => String(value??'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,' ').trim(), Number, Math, Array };
 vm.createContext(rankContext);
-vm.runInContext(`this.rank=(items,query)=>{state.items=items;const translatedTerms=[];${rankingCode};return hits}`, rankContext);
+vm.runInContext(reviewHelpers + `this.rank=(items,query)=>{state.items=items;const translatedTerms=[];${rankingCode};return hits}`, rankContext);
 const capecitabine = { name: 'Capecitabine 500mg tablet', code: '15-AB0-099' };
 assert.ok(context.score(capecitabine, 'xeloda') >= 1100, 'Xeloda should return capecitabine first');
 assert.ok(context.score(capecitabine, 'زيلودا') >= 1100, 'Arabic spelling of Xeloda should return capecitabine');

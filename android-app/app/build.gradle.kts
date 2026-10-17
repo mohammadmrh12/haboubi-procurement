@@ -2,5 +2,5 @@ plugins { id("com.android.application") }
 android {
     namespace = "com.haboubi.procurement"
     compileSdk = 36
-    defaultConfig { applicationId = "com.haboubi.procurement"; minSdk = 23; targetSdk = 34; versionCode = 38; versionName = "1.4.2" }
+    defaultConfig { applicationId = "com.haboubi.procurement"; minSdk = 23; targetSdk = 34; versionCode = 39; versionName = "1.4.3" }
 }

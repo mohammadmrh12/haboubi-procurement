@@ -564,6 +564,47 @@ function translateArabicQuery(query) {
   return translated.join(" ");
 }
 
+// Review metadata is derived at runtime; never merge or rewrite source catalog records.
+function reviewNameBase(item) {
+  let value = String(item.name || item.permanentName || "")
+    .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))?/gi, " ")
+    .replace(/\(\s*\d{2}-[A-Z0-9-]+\s*\)/g, " ");
+  // In mixed Latin/Arabic source labels, Arabic tail text is often committee/review annotation.
+  if (/[A-Za-z]/.test(value)) value = value.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, " ");
+  return norm(value);
+}
+function reviewCoreKey(item) {
+  return reviewNameBase(item).replace(/\b\d+(?:\.\d+)?\s*(?:mcg|micrograms?|mg|g|grams?|kg|ml|l|iu|units?)\b/g, " ")
+    .replace(/\b(?:vial|ampoule|ampule|tablet|tablets|capsule|capsules|syrup|suspension|solution|injection|inhalation|nebules?|cream|ointment|drops?|bottle|sachet|suppository|prefilled|pen|cartridge|unit dose)\b/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+function reviewSpecKey(item) {
+  return [reviewNameBase(item), norm(item.dose || item.specification || ""), norm(item.unit || ""), norm(item.kind || "")].join("|");
+}
+function reviewGroup(item) {
+  const core = reviewCoreKey(item);
+  if (!core) return { sameSpec: [], variants: [] };
+  const sameCore = state.items.filter(other => reviewCoreKey(other) === core);
+  const sameSpec = sameCore.filter(other => reviewSpecKey(other) === reviewSpecKey(item));
+  const variants = sameCore.filter(other => reviewSpecKey(other) !== reviewSpecKey(item));
+  return { sameSpec, variants };
+}
+function preferredNeedRecord(item) {
+  const group = reviewGroup(item).sameSpec;
+  const positives = group.filter(other => other.annual !== null && other.annual !== "" && Number.isFinite(Number(other.annual)) && Number(other.annual) > 0);
+  if (!positives.length) return item;
+  return positives.sort((a,b) => Number(b.annual) - Number(a.annual) || Number(a.id || 0) - Number(b.id || 0))[0];
+}
+function reviewAlertText(item) {
+  const group = reviewGroup(item);
+  if (group.variants.length) return "توجد سجلات للمادة بتركيز أو شكل أو مواصفة مختلفة. لا تُدمج تلقائياً؛ راجع المواصفة والاحتياج قبل اعتماد الشراء.";
+  if (group.sameSpec.length > 1) {
+    const positive = group.sameSpec.filter(other => other.annual !== null && other.annual !== "" && Number.isFinite(Number(other.annual)) && Number(other.annual) > 0);
+    if (positive.length) return "توجد سجلات متعددة للمادة بالمواصفة نفسها حسب النظام/المصدر. يعتمد النظام سجل الاحتياج الفعلي الأكبر من صفر، وتُراجع السجلات ذات الاحتياج صفر قبل الاعتماد. لم تُجمع الاحتياجات.";
+    return "توجد سجلات متعددة للمادة بالمواصفة نفسها، لكن لا يوجد احتياج موجب واضح. راجع المصدر قبل اعتماد الطلب؛ لم تُجمع الاحتياجات.";
+  }
+  return "";
+}
 function search() {
   const query = $("#searchInput").value;
   const translatedQuery = translateArabicQuery(query);
@@ -587,9 +628,10 @@ function search() {
     const annualNeed = item.annual == null || item.annual === "" || !Number.isFinite(Number(item.annual)) ? -1 : Number(item.annual);
     return { item, score, exact: exactCode || exactName, annualNeed, index };
   }).filter(x => x.score > 0).sort((a,b) => {
-    // Exact item/code matches always win, even if the recorded need is low or zero.
+    // For records that represent the same material/specification, prefer a positive need over zero even on exact matches.
+    if (reviewSpecKey(a.item) === reviewSpecKey(b.item) && ((a.annualNeed > 0) !== (b.annualNeed > 0))) return Number(b.annualNeed > 0) - Number(a.annualNeed > 0);
     if (a.exact !== b.exact) return Number(b.exact) - Number(a.exact);
-    // Only after match quality is tied/approximate do we prioritize higher recorded need.
+    if (reviewSpecKey(a.item) === reviewSpecKey(b.item) && a.annualNeed !== b.annualNeed) return b.annualNeed - a.annualNeed;
     if (!a.exact && a.annualNeed !== b.annualNeed) return b.annualNeed - a.annualNeed;
     return b.score - a.score || b.annualNeed - a.annualNeed || a.index - b.index;
   }).slice(0,35);
@@ -601,8 +643,8 @@ function search() {
     '<article class="result-row"><div><div class="result-name">' + esc(item.permanentName || item.name) + '</div>' + (item.permanentName && item.permanentName !== item.name ? '<div class="result-meta"><span>الاسم الأصلي: ' + esc(item.name) + '</span></div>' : '') + (item.nameAr ? '<div class="result-meta"><span>الاسم العربي: ' + esc(item.nameAr) + '</span></div>' : '') + '<div class="result-meta">' +
     '<span class="code">' + esc(item.code || "بدون رمز مسجل") + '</span><span>' + esc(item.unit || "الوحدة غير محددة") +
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
-    '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') +
-    '</div></div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
+    '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') + (reviewAlertText(item) ? '<span class="warning-tag">مراجعة تعدد السجلات</span>' : '') +
+    '</div>' + (reviewAlertText(item) ? '<div class="warning review-purchase-alert"><strong>تنبيه للمراجعة والشراء</strong><p>' + esc(reviewAlertText(item)) + '</p><small>قاعدة أقل الأسعار: تُقارن العروض المتكافئة فنياً والمستوفية للشروط فقط؛ اختلاف التركيز أو الشكل أو المواصفة لا يعني قابلية الاستبدال.</small></div>' : '') + '</div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
     '</span><button class="secondary mini-btn" data-item="' + item.id + '">تفاصيل المادة</button><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button><button class="mini-btn direct-add-btn" data-add-direct="' + item.id + '">إضافة مباشرة للطباعة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
@@ -610,7 +652,8 @@ function search() {
   $$("[data-edit-permanent]").forEach(button => button.onclick = () => openNameEditor({kind:"catalog", id:Number(button.dataset.editPermanent)}));
 }
 function addSearchResultDirect(id) {
-  const item=state.items.find(x=>Number(x.id)===Number(id));if(!item)return;
+  const found=state.items.find(x=>Number(x.id)===Number(id));if(!found)return;
+  const item=preferredNeedRecord(found);
   const divisor=item.kind==='drug'?4:2,period=item.kind==='drug'?3:6;
   const expected=item.annual==null?null:Number(item.annual)/divisor;
   const qty=expected;
@@ -628,8 +671,9 @@ function addSearchResultDirect(id) {
   add(false);
 }
 function selectItem(id) {
-  const item = state.items.find(x => x.id === id);
-  if (!item) return;
+  const found = state.items.find(x => x.id === id);
+  if (!found) return;
+  const item = preferredNeedRecord(found);
   state.selected = item;
   $("#results").classList.add("hidden");
   const period = item.kind === "drug" ? 3 : 6;
@@ -651,7 +695,7 @@ function selectItem(id) {
     '" placeholder="فارغ = احتياج ' + period + ' أشهر حسب الملزمة"></label><label>المواصفة / الجرعة<input id="specification" value="' + esc(item.dose || "") +
     '" placeholder="اختياري"></label></div><div class="quantity-area"><label>اسم المادة في الاستمارة (يمكن اختصاره)<input id="formItemName" maxlength="180" value="' + esc(item.formName || item.permanentName || item.name) +
     '" placeholder="اكتب الاسم المختصر الذي يظهر بالطباعة"></label></div><div id="qtyWarning">' +
-    (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
+    (reviewAlertText(item) ? '<div class="warning review-purchase-alert"><strong>تنبيه للمراجعة والشراء</strong><p>' + esc(reviewAlertText(item)) + '</p><small>قاعدة أقل الأسعار: تُقارن العروض المتكافئة فنياً والمستوفية للشروط فقط؛ اختلاف التركيز أو الشكل أو المواصفة لا يعني قابلية الاستبدال.</small></div>' : '') + (item.review ? '<div class="warning">تحتاج هذه المادة إلى مراجعة: ' + (!item.code ? "الرمز الوطني غير متوفر. " : "") +
       (item.annual === null ? "الاحتياج السنوي غير واضح أو غير موجود في الورقة المختارة. " : "") + "تحقق من المصدر قبل الاعتماد.</div>" : "") +
     (zeroNeed ? '<div class="warning">الاحتياج المسجل في الملزمة يساوي صفر؛ لا يعني ذلك تلقائياً عدم الحاجة. راجع المصدر قبل تجهيز مستند رسمي.</div>' : "") +
     '</div><div class="button-row"><button class="primary" id="addToDoc">＋ إضافة للمستند</button>' +
@@ -714,7 +758,7 @@ function renderDocItems() {
     return;
   }
   box.innerHTML = '<div class="table-wrap"><table class="doc-table"><thead><tr><th>اسم المادة للطباعة</th><th>الرمز الوطني</th><th>الكمية</th><th>الوحدة</th><th>إجراء</th></tr></thead><tbody>' +
-    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل الاسم</button></td><td class="code">' + esc(x.code || "غير مسجل") +
+    state.documentItems.map((x,i) => '<tr><td class="doc-name-cell"><span class="doc-name-text" data-dose="' + esc(x.dose || x.specification || '') + '" data-form="' + esc(x.unit || '') + '">' + esc(x.formName || x.name) + '</span><button type="button" class="secondary doc-edit-btn" data-edit-name="' + i + '">تعديل الاسم</button></td><td class="code">' + esc(x.code || "غير مسجل") +
       '</td><td class="quantity-edit-cell"><div class="quantity-value">' + fmt(x.requested) + '</div><button type="button" class="secondary doc-qty-edit-btn" data-edit-qty="' + i + '">تعديل العدد</button></td><td>' + esc(x.unit || "—") + '</td><td class="doc-actions"><button type="button" class="clear-btn doc-delete-btn" data-remove="' + i + '">حذف</button></td></tr>').join("") +
     '</tbody></table></div>';
   $$("[data-edit-name]").forEach(button => button.onclick = () => {
@@ -747,12 +791,11 @@ function loadSettings() {
   try { return JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch { return {}; }
 }
 function printableMaterialName(value) {
-  return String(value ?? "").split(/\r?\n/).map(line => line
-    .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))*/gi, " ")
-    .replace(/\(\s*\d{2}-[A-Z0-9-]+\s*\)/g, " ")
-    .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, " ")
-    .replace(/[،؛]+/g, " ").replace(/\s{2,}/g, " ").trim())
-    .filter(line => line && /[A-Za-z0-9]/.test(line)).join(" ").replace(/\s{2,}/g, " ").trim();
+  let text = String(value ?? "")
+    .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))?/gi, " ")
+    .replace(/\(\s*\d{2}-[A-Z0-9-]+\s*\)/g, " ");
+  if (/[A-Za-z]/.test(text)) text = text.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, " ");
+  return text.replace(/[،؛]+/g, " ").replace(/\s{2,}/g, " ").trim();
 }
 function printDocument(type) {
   if (!state.documentItems.length) { toast("أضف مادة واحدة على الأقل أولاً"); return; }
@@ -764,7 +807,7 @@ function printDocument(type) {
   const store = $("#storekeeperName").value.trim();
   const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
   const rows = state.documentItems.map((item,i) =>
-    '<tr><td>' + (i+1) + '</td><td>' + esc(printableMaterialName(item.formName || item.permanentName || item.name)) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
+    '<tr><td>' + (i+1) + '</td><td>' + esc(printableMaterialName([item.formName || item.name, item.dose || item.specification, item.unit].filter(Boolean).join(' '))) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
     '</td><td>' + fmt(item.requested) + '</td>' + (isAuth ? '<td>يُستكمل من الجهة المختصة</td>' : '') + '</tr>'
   ).join("");
   const bodyText = isAuth
