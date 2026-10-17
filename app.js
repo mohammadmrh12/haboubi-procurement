@@ -746,6 +746,14 @@ window.haboubiLoadHistoryForEdit = row => {
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch { return {}; }
 }
+function printableMaterialName(value) {
+  return String(value ?? "").split(/\r?\n/).map(line => line
+    .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))*/gi, " ")
+    .replace(/\(\s*\d{2}-[A-Z0-9-]+\s*\)/g, " ")
+    .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, " ")
+    .replace(/[،؛]+/g, " ").replace(/\s{2,}/g, " ").trim())
+    .filter(line => line && /[A-Za-z0-9]/.test(line)).join(" ").replace(/\s{2,}/g, " ").trim();
+}
 function printDocument(type) {
   if (!state.documentItems.length) { toast("أضف مادة واحدة على الأقل أولاً"); return; }
   const settings = loadSettings();
@@ -756,7 +764,7 @@ function printDocument(type) {
   const store = $("#storekeeperName").value.trim();
   const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
   const rows = state.documentItems.map((item,i) =>
-    '<tr><td>' + (i+1) + '</td><td>' + esc(item.name) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
+    '<tr><td>' + (i+1) + '</td><td>' + esc(printableMaterialName(item.formName || item.permanentName || item.name)) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
     '</td><td>' + fmt(item.requested) + '</td>' + (isAuth ? '<td>يُستكمل من الجهة المختصة</td>' : '') + '</tr>'
   ).join("");
   const bodyText = isAuth

@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 37,
-  "appVersionName": "1.4.1",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.1-apology-wording",
+  "appVersionCode": 38,
+  "appVersionName": "1.4.2",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.2-clean-print-names",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إضافة مرادفات من مصادر وزارة الصحة العراقية وتوسيع البحث للأدوية والمستلزمات والمواد المختبرية، مع إضافة كلمة واتعهد إلى نص استمارة الاعتذار قبل بوجود المادة ضمن تقدير الاحتياج."
+  "notes": "إضافة مرادفات من مصادر وزارة الصحة العراقية وتوسيع البحث للأدوية والمستلزمات والمواد المختبرية، مع إخفاء الملاحظات العربية وعبارات قاعدة أقل الأسعار من أسماء المواد في الطباعة فقط، مع إبقائها في قاعدة البيانات."
 }
