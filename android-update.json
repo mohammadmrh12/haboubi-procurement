@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 42,
-  "appVersionName": "1.4.6",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.6-search-performance",
+  "appVersionCode": 43,
+  "appVersionName": "1.4.7",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.7-financial-step-six",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "تحسين أداء البحث: بناء فهرس مراجعة خطي بدلاً من إعادة مسح القاعدة لكل مادة، وتأخير البحث 140ms بعد آخر حرف لتقليل التجمّد. جميع قيم الاحتياج ومصادرها محفوظة كما هي."
+  "notes": "إضافة الخطوة السادسة إلى استمارة التخصيص المالي لتأييد تشكيل الرقابة والتدقيق الداخلي على صحة الإجراءات للخطوات السابقة، مع ثلاثة أسطر للتوقيع أو الملاحظات."
 }

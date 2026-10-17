@@ -77,6 +77,11 @@
   .box-sign{position:absolute;bottom:5mm;right:14mm}
   .approval{margin-top:38mm;text-align:right}
   .approval-box{border:1px solid #666;width:58%;height:29mm;margin:5mm auto 0}
+  .internal-audit{margin-top:23mm;text-align:right;font-size:10.5pt;line-height:1.6}
+  .internal-audit>b{display:block;text-decoration:underline;font-size:15pt;margin-bottom:3mm}
+  .internal-audit>p{margin:0 0 4mm;font-weight:600}
+  .audit-lines{display:flex;flex-direction:column;gap:0;margin:0 0 0 1mm}
+  .audit-lines i{display:block;height:9mm;border-bottom:1px solid #666;font-style:normal}
   .supplier-page{padding-top:12mm}
   .supplier-meta{margin:0 0 20mm!important}
   .supplier-title{text-align:center;font-size:17pt;line-height:1.2;margin:0 0 5mm}
