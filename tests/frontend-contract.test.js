@@ -37,6 +37,9 @@ assert.match(forms, /قاعدة\\s\*\[اأ\]\?قل\\s\*الأسعار/, 'price-r
   assert.equal(ctx.preferredNeedRecord(positive).id, 2, 'different specification must not be merged or selected as an equivalent');
 }
 
+assert.match(app, /function needRecordsSummary\(item\)/, 'search results should show distinct need values and source rows without summing them');
+assert.match(app, /\"سفيترايكزون\":\"ceftriaxone\"/, 'common Iraqi Arabic misspelling should translate to ceftriaxone');
+assert.match(app, /needOnly: true/, 'continuation rows with merged name/code cells should preserve separate needs');
 assert.match(app, /data-edit-name/, 'document item list should expose a dedicated edit button');
 assert.match(html, /id=\"editNameDialog\"/, 'print name editing should use a popup dialog');
 assert.match(html, /id=\"savePermanentName\"/, 'popup should support per-user permanent name changes');
@@ -48,11 +51,11 @@ assert.match(app, /const candidates = new Map\(\)/, 'search should collapse exac
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /Number\.isFinite\(sn\)&&sn>0&&\(!Number\.isFinite\(bn\)\|\|bn<=0\)/, 'Android catalog updater should preserve positive saved need values when refreshing catalog');
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
-assert.match(html, /app\.js\?v=73/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=74/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=58/, 'forms asset should have an explicit cache version');
 
 assert.match(html, /styles\.css\?v=74/, 'updated input zoom CSS should be cache-busted');
-assert.match(html, /الإصدار 1\.4\.4/, 'website download label should match the published APK version');
+assert.match(html, /الإصدار 1\.4\.5/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
@@ -60,13 +63,13 @@ assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new UR
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.style\.setProperty\('page-break-after','avoid','important'\)/, 'print generation must explicitly suppress a trailing blank page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\) \|\| localOwner!==String\(user\.id\)/, 'switching accounts must refresh local data even when a tab marker exists');
-assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.4\.4'/, 'in-app updater version must match the installed app version');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.4\.5'/, 'in-app updater version must match the installed app version');
 
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v91/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=74', 'drug-aliases.js?v=2', 'app.js?v=73', 'forms-addon.js?v=58', 'catalog-seed.js?v=30', 'auth.js?v=11']) {
+assert.match(sw, /haboubi-procurement-v92/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=74', 'drug-aliases.js?v=2', 'app.js?v=74', 'forms-addon.js?v=58', 'catalog-seed.js?v=31', 'auth.js?v=11']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');

@@ -1,6 +1,6 @@
 (() => {
   const MANIFEST_URL='https://medstock.cinematicplus.online/android-update.json';
-  const APP_VERSION='1.4.4';
+  const APP_VERSION='1.4.5';
   const CATALOG_KEY='haboubiCatalogVersionV1';
   const $=s=>document.querySelector(s);
 
@@ -36,7 +36,18 @@
           const extras=savedItems.filter(item=>!oldSignatures.has(signature(item)));
           const updatedItems=[...catalog.items]; const known=new Set(updatedItems.map(signature));
           const bySignature=new Map(updatedItems.map(item=>[signature(item),item]));
-          for(const item of savedItems){const bundled=bySignature.get(signature(item));if(!bundled)continue;const sn=item.annual==null||item.annual===''?null:Number(item.annual);const bn=bundled.annual==null||bundled.annual===''?null:Number(bundled.annual);if(Number.isFinite(sn)&&sn>0&&(!Number.isFinite(bn)||bn<=0)){bundled.annual=sn;bundled.needRaw=item.needRaw||String(sn);bundled.review=false;bundled.needSource=item.source||item.needSource||'سجل محفوظ للمستخدم';}}
+          for(const item of savedItems){
+            const bundled=bySignature.get(signature(item));if(!bundled)continue;
+            const sn=item.annual==null||item.annual===''?null:Number(item.annual);const bn=bundled.annual==null||bundled.annual===''?null:Number(bundled.annual);
+            if(Number.isFinite(sn)&&sn>0&&(!Number.isFinite(bn)||bn<=0)){bundled.annual=sn;bundled.needRaw=item.needRaw||String(sn);bundled.review=false;bundled.needSource=item.source||item.needSource||'سجل محفوظ للمستخدم';}
+            if(Array.isArray(item.needRecords)){
+              const records=new Map((bundled.needRecords||[]).map(record=>[[record.source,record.sheet,record.row].join('|'),record]));
+              for(const record of item.needRecords){const key=[record.source,record.sheet,record.row].join('|');if(!records.has(key))records.set(key,record);else records.set(key,{...records.get(key),...record,needOnly:!!(records.get(key).needOnly||record.needOnly)});}
+              bundled.needRecords=[...records.values()];
+              const positive=bundled.needRecords.filter(record=>record.annual!=null&&record.annual!==''&&Number.isFinite(Number(record.annual))&&Number(record.annual)>0);
+              if(positive.length&&!(Number(bundled.annual)>0)){bundled.annual=Math.max(...positive.map(record=>Number(record.annual)));bundled.needRaw=String(bundled.annual);bundled.review=false;}
+            }
+          }
           for(const item of extras){const key=signature(item);if(!known.has(key)){updatedItems.push(item);known.add(key);}}
           const updatedFiles=[...(catalog.files||[])]; const fileNames=new Set(updatedFiles.map(f=>String(f.name||f.source||'')));
           for(const file of (saved.files||[])){const key=String(file.name||file.source||'');if(key&&!fileNames.has(key)){updatedFiles.push(file);fileNames.add(key);}}

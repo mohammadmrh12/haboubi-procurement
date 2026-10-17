@@ -27,6 +27,17 @@ function toast(message) {
   setTimeout(() => el.classList.remove("show"), 2800);
 }
 function clean(value) { return value == null ? "" : String(value).replace(/\s+/g, " ").trim(); }
+function cleanImportedMaterialName(value) {
+  const raw = String(value ?? "").replace(/\u00a0/g, " ").trim();
+  if (!raw) return "";
+  let name = raw;
+  const firstArabic = name.search(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/);
+  const hasEnglish = /[A-Za-z]/.test(name);
+  const hasLongAnnotation = name.length > 180 || /قاعدة\s*[اأ]?قل\s*الأسعار|مفاتحة الشركات|تضاف المادة|ج\s*\/\s*\d|المستخدمة في مستحضرات|يجب عدم اعطاء|تستعمل المادة/i.test(name);
+  if (hasEnglish && firstArabic >= 8 && hasLongAnnotation) name = name.slice(0, firstArabic);
+  if (name.length > 400) name = name.split(/[\r\n]/, 1)[0];
+  return clean(name).slice(0, 400);
+}
 function norm(value) {
   return clean(value).toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ک/g, "ك").replace(/ی/g, "ي").replace(/[ًٌٍَُِّْـ]/g, "")
@@ -197,11 +208,39 @@ function mergeItem(existing, incoming) {
   if (!sources.some(s => s.source === nextSource.source && s.sheet === nextSource.sheet && s.row === nextSource.row)) sources.push(nextSource);
   const keepIncoming = sourcePriority(incoming) > sourcePriority(existing);
   const result = keepIncoming ? { ...incoming } : { ...existing };
+  const records = [...(existing.needRecords || [{ annual: existing.annual, needRaw: existing.needRaw || "", source: existing.source, sheet: existing.sheet, row: existing.row, note: existing.note || "", priority: existing.priority || "" }]), ...(incoming.needRecords || [{ annual: incoming.annual, needRaw: incoming.needRaw || "", source: incoming.source, sheet: incoming.sheet, row: incoming.row, note: incoming.note || "", priority: incoming.priority || "" }])];
+  const uniqueRecords = new Map();
+  for (const record of records) {
+    const key = [record.source, record.sheet, record.row].join("|");
+    if (!uniqueRecords.has(key)) uniqueRecords.set(key, record);
+    else uniqueRecords.set(key, { ...uniqueRecords.get(key), ...record, needOnly: !!(uniqueRecords.get(key).needOnly || record.needOnly) });
+  }
+  const needRecords = [...uniqueRecords.values()];
+  const positiveNeeds = needRecords.filter(record => record.annual !== null && record.annual !== "" && Number.isFinite(Number(record.annual)) && Number(record.annual) > 0);
+  // Keep every source need; choose a positive value for the default only when a duplicate zero/blank row exists.
+  if (positiveNeeds.length) {
+    const selectedNeed = positiveNeeds.slice().sort((a,b) => Number(b.annual) - Number(a.annual))[0];
+    result.annual = Number(selectedNeed.annual);
+    result.needRaw = selectedNeed.needRaw || String(result.annual);
+    // Point the default material row to the source row that actually carries the positive need.
+    // Continuation rows are preserved in needRecords but have no independent material identity.
+    if (!selectedNeed.needOnly && selectedNeed.source && selectedNeed.row) {
+      result.source = selectedNeed.source;
+      result.sheet = selectedNeed.sheet || result.sheet;
+      result.row = selectedNeed.row;
+      if (selectedNeed.note) result.note = selectedNeed.note;
+      if (selectedNeed.priority) result.priority = selectedNeed.priority;
+    } else if (selectedNeed.needOnly) {
+      const identityRecord = needRecords.find(record => !record.needOnly && record.source === selectedNeed.source && record.sheet === selectedNeed.sheet && record.row);
+      if (identityRecord) { result.source = identityRecord.source; result.sheet = identityRecord.sheet; result.row = identityRecord.row; }
+    }
+  }
+  result.needRecords = needRecords;
   result.sources = sources;
   if (!result.note && incoming.note) result.note = incoming.note;
   if (!result.unit && incoming.unit) result.unit = incoming.unit;
   if (!result.priority && incoming.priority) result.priority = incoming.priority;
-  if (result.annual === null && incoming.annual !== null) result.annual = incoming.annual;
+  if (!result.sourceNameRaw && incoming.sourceNameRaw) result.sourceNameRaw = incoming.sourceNameRaw;
   result.review = !result.code || result.annual === null;
   return result;
 }
@@ -235,9 +274,28 @@ function parseWorkbook(file, workbook) {
       const get = i => i >= 0 && i < row.length ? clean(row[i]) : "";
       const rawNeed = get(c.annual);
       const parsedNumber = number(rawNeed);
+      const sourceNameRaw = get(c.name);
+      const importedName = cleanImportedMaterialName(sourceNameRaw);
+      const sourceCode = get(c.code);
+      // Some official workbooks merge the national-code/name cells vertically while listing separate needs by indication on following rows.
+      // Preserve these continuation rows as independent need records on the preceding material instead of silently skipping them.
+      if (!sourceCode && !importedName && parsedNumber !== null) {
+        const previous = [...parsed].reverse().find(candidate => candidate.source === file.name && candidate.sheet === sheetName && candidate.code && candidate.name);
+        if (previous) {
+          previous.needRecords = previous.needRecords || [{ annual: previous.annual, needRaw: previous.needRaw || "", source: previous.source, sheet: previous.sheet, row: previous.row, note: previous.note || "", priority: previous.priority || "" }];
+          previous.needRecords.push({ annual: parsedNumber, needRaw: rawNeed, source: file.name, sheet: sheetName, row: r + 1, note: get(c.note), priority: get(c.priority), needOnly: true });
+          previous.sources = previous.sources || [];
+          if (!previous.sources.some(source => source.source === file.name && source.sheet === sheetName && source.row === r + 1)) previous.sources.push({ source: file.name, sheet: sheetName, row: r + 1, needOnly: true });
+          if (parsedNumber > 0 && !(Number(previous.annual) > 0 || Number(previous.annual) >= parsedNumber)) { previous.annual = parsedNumber; previous.needRaw = rawNeed; }
+          else if (parsedNumber > 0 && parsedNumber > Number(previous.annual)) { previous.annual = parsedNumber; previous.needRaw = rawNeed; }
+          previous.review = !previous.code || previous.annual === null;
+          continue;
+        }
+      }
       const item = {
-        name: get(c.name), code: get(c.code), unit: get(c.unit), annual: parsedNumber,
+        name: importedName, ...(importedName !== sourceNameRaw ? { sourceNameRaw } : {}), code: get(c.code), unit: get(c.unit), annual: parsedNumber,
         needRaw: rawNeed, priority: get(c.priority), note: get(c.note), dose: get(c.dose),
+        needRecords: [{ annual: parsedNumber, needRaw: rawNeed, source: file.name, sheet: sheetName, row: r + 1, note: get(c.note), priority: get(c.priority) }],
         source: file.name, sheet: sheetName, row: r + 1, kind: inferKind(file.name, sheetName),
         review: false, sources: [{ source: file.name, sheet: sheetName, row: r + 1 }]
       };
@@ -327,6 +385,17 @@ async function restoreData() {
         if (Array.isArray(item.sources)) {
           const known = new Set((bundled.sources || []).map(s => [s.source,s.sheet,s.row].join("|")));
           bundled.sources = [...(bundled.sources || []), ...item.sources.filter(s => !known.has([s.source,s.sheet,s.row].join("|")))];
+        }
+        if (Array.isArray(item.needRecords)) {
+          const records = new Map((bundled.needRecords || []).map(record => [[record.source,record.sheet,record.row].join("|"), record]));
+          for (const record of item.needRecords) {
+            const key = [record.source,record.sheet,record.row].join("|");
+            if (!records.has(key)) records.set(key, record);
+            else records.set(key, { ...records.get(key), ...record, needOnly: !!(records.get(key).needOnly || record.needOnly) });
+          }
+          bundled.needRecords = [...records.values()];
+          const savedPositive = bundled.needRecords.filter(record => record.annual != null && record.annual !== "" && Number.isFinite(Number(record.annual)) && Number(record.annual) > 0);
+          if (savedPositive.length && !(Number(bundled.annual) > 0)) { bundled.annual = Math.max(...savedPositive.map(record => Number(record.annual))); bundled.needRaw = String(bundled.annual); bundled.review = false; }
         }
       }
       if (!seen.has(key)) { merged.push(item); seen.add(key); }
@@ -479,7 +548,7 @@ function editDistance(a,b) {
 const AR_MEDICAL_TERMS = {
   "باراسيتامول":"paracetamol acetaminophen", "بنادول":"paracetamol acetaminophen", "اسيتامينوفين":"acetaminophen paracetamol", "زيلودا":"xeloda capecitabine", "كسيلودا":"xeloda capecitabine", "كابسيتابين":"capecitabine", "كابيسيتابين":"capecitabine", "باراسيتامول":"paracetamol acetaminophen", "اوجمنتين":"augmentin amoxicillin clavulanic acid", "اموكسكلاف":"amoxicillin clavulanic acid coamoxiclav", "فلاجيل":"flagyl metronidazole", "فنتولين":"ventolin salbutamol", "نيكسيوم":"nexium esomeprazole", "كونكور":"concor bisoprolol", "ليبيتور":"lipitor atorvastatin", "كريستور":"crestor rosuvastatin",
   "ايبوبروفين":"ibuprofen", "ديكلوفيناك":"diclofenac", "اموكسيسيلين":"amoxicillin", "ازيثرومايسين":"azithromycin",
-  "سيفترياكسون":"ceftriaxone", "ميترونيدازول":"metronidazole", "اوميبرازول":"omeprazole", "بانتوبرازول":"pantoprazole",
+  "سيفترياكسون":"ceftriaxone", "سفترياكسون":"ceftriaxone", "سفيترايكزون":"ceftriaxone", "سفترياكزون":"ceftriaxone", "سفترايكسون":"ceftriaxone", "سيفترياكزون":"ceftriaxone", "سفترياكسون":"ceftriaxone", "ميترونيدازول":"metronidazole", "اوميبرازول":"omeprazole", "بانتوبرازول":"pantoprazole",
   "ميتفورمين":"metformin", "انسولين":"insulin", "اسبرين":"aspirin", "اتورفاستاتين":"atorvastatin",
   "املوديبين":"amlodipine", "لوسارتان":"losartan", "كابتوبريل":"captopril", "سالبيوتامول":"salbutamol albuterol",
   "فوروسيميد":"furosemide", "سيتريزين":"cetirizine", "لوراتادين":"loratadine", "ديكساميثازون":"dexamethasone",
@@ -614,12 +683,30 @@ function preferredNeedRecord(item) {
 function reviewAlertText(item) {
   const group = reviewGroup(item);
   if (group.variants.length) return "توجد سجلات للمادة بتركيز أو شكل أو مواصفة مختلفة. لا تُدمج تلقائياً؛ راجع المواصفة والاحتياج قبل اعتماد الشراء.";
-  if (group.sameSpec.length > 1) {
+  const needs = Array.isArray(item.needRecords) ? item.needRecords : [];
+  const distinctNeeds = new Set(needs.filter(record => record.annual !== null && record.annual !== "" && Number.isFinite(Number(record.annual))).map(record => String(Number(record.annual))));
+  if (group.sameSpec.length > 1 || distinctNeeds.size > 1) {
     const positive = group.sameSpec.filter(other => other.annual !== null && other.annual !== "" && Number.isFinite(Number(other.annual)) && Number(other.annual) > 0);
-    if (positive.length) return "توجد سجلات متعددة للمادة بالمواصفة نفسها حسب النظام/المصدر. يعتمد النظام سجل الاحتياج الفعلي الأكبر من صفر، وتُراجع السجلات ذات الاحتياج صفر قبل الاعتماد. لم تُجمع الاحتياجات.";
+    if (positive.length || [...distinctNeeds].some(value => Number(value) > 0)) return "توجد سجلات احتياج متعددة للمادة بالمواصفة نفسها. يعرض النظام القيم ومصادرها؛ لم تُجمع الاحتياجات. راجع السجل المناسب قبل اعتماد الطلب.";
     return "توجد سجلات متعددة للمادة بالمواصفة نفسها، لكن لا يوجد احتياج موجب واضح. راجع المصدر قبل اعتماد الطلب؛ لم تُجمع الاحتياجات.";
   }
   return "";
+}
+function needRecordsSummary(item) {
+  const records = Array.isArray(item.needRecords) && item.needRecords.length ? item.needRecords : [];
+  const groups = new Map();
+  for (const record of records) {
+    if (record.annual == null || record.annual === "" || !Number.isFinite(Number(record.annual))) continue;
+    const value = String(Number(record.annual));
+    if (!groups.has(value)) groups.set(value, []);
+    groups.get(value).push(record);
+  }
+  if (groups.size < 2) return "";
+  return [...groups.entries()].map(([value, rows]) => {
+    const origins = rows.slice(0, 3).map(record => [record.source, record.sheet, record.row ? "صف " + record.row : ""].filter(Boolean).join(" / "));
+    const notes = [...new Set(rows.map(record => clean(record.note)).filter(Boolean))].slice(0, 1).map(note => note.slice(0, 45));
+    return value + " (" + origins.join("، ") + (notes.length ? "؛ " + notes[0] : "") + (rows.length > 3 ? "، ومصادر أخرى" : "") + ")";
+  }).join("؛ ") + " — لم تُجمع الاحتياجات";
 }
 function search() {
   const query = $("#searchInput").value;
@@ -671,7 +758,7 @@ function search() {
     '<span class="code">' + esc(item.code || "بدون رمز مسجل") + '</span><span>' + esc(item.unit || "الوحدة غير محددة") +
     '</span><span>' + esc(item.source || "") + '</span><span>ورقة: ' + esc(item.sheet || "") +
     '</span>' + (item.review ? '<span class="warning-tag">تحتاج مراجعة</span>' : '') + (reviewAlertText(item) ? '<span class="warning-tag">مراجعة تعدد السجلات</span>' : '') +
-    '</div>' + (reviewAlertText(item) ? '<div class="warning review-purchase-alert"><strong>تنبيه للمراجعة والشراء</strong><p>' + esc(reviewAlertText(item)) + '</p><small>قاعدة أقل الأسعار: تُقارن العروض المتكافئة فنياً والمستوفية للشروط فقط؛ اختلاف التركيز أو الشكل أو المواصفة لا يعني قابلية الاستبدال.</small></div>' : '') + '</div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
+    '</div>' + (reviewAlertText(item) ? '<div class="warning review-purchase-alert"><strong>تنبيه للمراجعة والشراء</strong><p>' + esc(reviewAlertText(item)) + '</p><small>قاعدة أقل الأسعار: تُقارن العروض المتكافئة فنياً والمستوفية للشروط فقط؛ اختلاف التركيز أو الشكل أو المواصفة لا يعني قابلية الاستبدال.</small></div>' : '') + (needRecordsSummary(item) ? '<div class="result-meta need-records-summary"><strong>الاحتياجات حسب الملزمة:</strong> ' + esc(needRecordsSummary(item)) + '</div>' : '') + '</div><div class="result-actions"><span class="qty-chip">سنوي: ' + (item.annual === null ? "غير محدد" : fmt(item.annual)) +
     '</span><button class="secondary mini-btn" data-item="' + item.id + '">تفاصيل المادة</button><button class="secondary mini-btn" data-edit-permanent="' + item.id + '">تعديل الاسم</button><button class="mini-btn direct-add-btn" data-add-direct="' + item.id + '">إضافة مباشرة للطباعة</button></div></article>'
   ).join("");
   $$("[data-item]").forEach(button => button.onclick = () => selectItem(Number(button.dataset.item)));
@@ -715,6 +802,7 @@ function selectItem(id) {
     '<div class="selected-grid">' +
     field("الرمز الوطني", item.code || "غير مسجل", true) + field("التصنيف", item.kind === "drug" ? "دواء" : "مستلزم / مادة") +
     field("وحدة القياس", item.unit || "غير محددة") + field("الاحتياج السنوي حسب الملزمة", item.annual === null ? "غير واضح" : fmt(item.annual)) +
+    (needRecordsSummary(item) ? field("الاحتياجات المسجلة ومصادرها (لم تُجمع)", needRecordsSummary(item)) : "") +
     field("مصدر البيانات", (item.source || "") + " · " + (item.sheet || "") + " · صف " + item.row) +
     field("الأولوية", item.priority || "غير محددة") + field("الملاحظات الأصلية", item.note || "لا توجد") +
     '</div><div class="quantity-area">' +

@@ -31,6 +31,7 @@ assert.ok(context.score(capecitabine, 'xeloda') >= 1100, 'Xeloda should return c
 assert.ok(context.score(capecitabine, 'زيلودا') >= 1100, 'Arabic spelling of Xeloda should return capecitabine');
 assert.equal(context.phonetic('Xeloda'), context.phonetic('زيلودا'), 'Arabic and English brand transliterations should normalize together');
 assert.ok(context.score({name:'Ceftriaxone 1g Injection'}, 'Ceftrixone') > 0, 'single-character misspellings should return close drug matches');
+assert.ok(context.score({name:'Ceftriaxone 1g I.V. Injection', code:'05-AB0-031', annual:25000}, 'ceftrixone') > 0, 'Ceftrixone typo should find the real ceftriaxone catalogue item');
 assert.ok(context.score({name:'Sterile Surgical Gloves'}, 'sterlie gloves') > 0, 'adjacent transposed letters and multi-token searches should match');
 assert.ok(context.score({name:'Gauze Roll Sterile'}, 'gauz rol sterlie') > 0, 'multi-word typos should match by token rather than comparing the full phrase');
 assert.equal(context.norm('كفوف ی'), context.norm('كفوف ي'), 'Arabic and Persian-style ya variants should normalize consistently');
