@@ -1183,7 +1183,7 @@ document.querySelectorAll("[data-name-picker]").forEach(button => button.addEven
   const config = namePickerConfig[activeNamePicker];
   $("#namePickerTitle").textContent = config.title;
   $("#namePickerDescription").textContent = "اختر اسماً محفوظاً لهذا المستخدم أو أضف اسماً جديداً.";
-  renderSavedNameList(); namePickerDialog.classList.remove("hidden"); $("#newSavedName").focus();
+  renderSavedNameList(); namePickerDialog.classList.remove("hidden");
 }));
 $("#namePickerForm")?.addEventListener("submit", event => {
   event.preventDefault();

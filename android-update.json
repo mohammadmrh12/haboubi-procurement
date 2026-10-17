@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 45,
-  "appVersionName": "1.4.9",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.9-contract-table-layout",
+  "appVersionCode": 46,
+  "appVersionName": "1.5.0",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.0-name-picker-focus",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "تكبير إضافي لمربع الخطوة الرابعة وحقل الاسم بين القوسين. في تأييد قسم العقود: توسيع عمود الإيميل، تقليل عرض اسم المورد والملاحظات، وزيادة ارتفاع صفوف الجدول."
+  "notes": "إصلاح اختيار المخوّل وأمين المخزن: فتح نافذة اختيار الاسم دون نقل التركيز تلقائياً إلى حقل الكتابة أو إظهار لوحة المفاتيح، لتسهيل اختيار اسم محفوظ أولاً."
 }
