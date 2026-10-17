@@ -2,6 +2,7 @@
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const state = { items: [], files: [], selected: null, documentItems: [], settings: {}, aiTerms: [] };
+Object.defineProperty(window, 'haboubiCatalogItems', { configurable: true, get: () => state.items });
 const pages = {
   search: ["البحث", "ابحث بالاسم العلمي أو الوصف أو الرمز الوطني، ثم راجع الاحتياج قبل إنشاء المستند."],
   documents: ["الطباعة", ""],

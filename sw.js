@@ -1,5 +1,5 @@
-const CACHE_NAME = "haboubi-procurement-v100";
-const ASSETS = ["./","./index.html","./styles.css?v=79","./drug-aliases.js?v=2","./app.js?v=79","./forms-addon.js?v=61","./catalog-seed.js?v=31","./auth.js?v=11","./manifest.json","./logo.svg?v=3","./apple-touch-icon-v3.png","./vendor/xlsx.full.min.js"];
+const CACHE_NAME = "haboubi-procurement-v104";
+const ASSETS = ["./","./index.html","./styles.css?v=81","./drug-aliases.js?v=2","./app.js?v=81","./forms-addon.js?v=65","./catalog-seed.js?v=31","./auth.js?v=11","./manifest.json","./logo.svg?v=3","./apple-touch-icon-v3.png","./vendor/xlsx.full.min.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

@@ -110,17 +110,17 @@
   .allocation-box .box-sign{left:14mm;right:auto;bottom:5mm}
 }
 /* Use the supplied official Iraqi Ministry of Health logo on both official letters. */
-#printArea .auth-page .letterhead,#printArea .apology-page .letterhead{position:relative;display:flex;justify-content:space-between;align-items:flex-start;line-height:1.9;font-weight:bold;margin:2mm 0 10mm;min-height:0}
+#printArea .auth-page .letterhead,#printArea .apology-page .letterhead{position:relative;display:flex;justify-content:space-between;align-items:flex-start;line-height:1.9;font-weight:bold;margin:0 0 2mm;min-height:0}
 #printArea .auth-page .ministry-logo,#printArea .apology-page .ministry-logo{position:absolute;width:25mm;height:20mm;object-fit:contain;left:50%;top:0;transform:translateX(-50%);z-index:1}
 #printArea .auth-page .letterhead>div,#printArea .apology-page .letterhead>div{position:relative;z-index:2}
-@media print{#printArea .letterhead{display:flex;justify-content:space-between;align-items:flex-start;line-height:1.9;font-weight:bold;margin:2mm 0 10mm}#printArea .letter-number{text-align:left;min-width:48mm}#printArea .letter-rule{border:0;border-top:3px double #111;margin:5mm 0 12mm}#printArea .letter-title{text-align:center;font-size:18pt;margin:10mm 0 12mm;text-decoration:underline}#printArea .letter-text{font-size:13pt;font-weight:bold;line-height:2.1;margin:7mm 0}#printArea .letter-sign{text-align:left;margin:12mm 8mm 0 0;line-height:2;font-size:12pt}#printArea .apology-page .declaration{margin-top:10mm}#printArea .auth-page .official-table,#printArea .apology-page .official-table{margin-top:8mm}}
+@media print{#printArea .letterhead{display:flex;justify-content:space-between;align-items:flex-start;line-height:1.9;font-weight:bold;margin:2mm 0 10mm}#printArea .letter-number{text-align:left;min-width:48mm}#printArea .letter-rule{border:0;border-top:3px double #111;margin:2mm 0 5mm}#printArea .letter-title{text-align:center;font-size:18pt;margin:3mm 0 5mm;text-decoration:underline}#printArea .letter-text{font-size:13pt;font-weight:bold;line-height:1.65;margin:3mm 0}#printArea .letter-sign{text-align:left;margin:12mm 8mm 0 0;line-height:2;font-size:12pt}#printArea .apology-page .declaration{margin-top:4mm}#printArea .auth-page .official-table,#printArea .apology-page .official-table{margin-top:3mm}}
 @media print{#printArea .auth-page,#printArea .apology-page{font-family:Arial,sans-serif;color:#000;box-sizing:border-box;padding:13mm 12mm;position:relative;direction:rtl}#printArea .auth-page{page-break-after:always;break-after:page}#printArea .apology-page{page-break-after:always;break-after:page}#printArea .doc-meta{display:none}#printArea .letter-head{display:flex;justify-content:space-between;align-items:flex-start;font-weight:bold;line-height:1.8;margin-bottom:18mm}#printArea .letter-recipient{text-align:center;font-weight:bold;margin:8mm 0}#printArea .auth-page h2,#printArea .apology-page h2{text-align:center;margin:6mm 0;font-size:16pt}#printArea .letter-body{font-weight:bold;line-height:2;margin:6mm 0 10mm}#printArea .letter-storekeeper{margin-top:20mm;font-weight:bold}#printArea .letter-director{position:absolute;bottom:17mm;right:15mm;line-height:2.1;font-weight:bold}#printArea .apology-declaration{margin-top:25mm;line-height:2;font-weight:bold}#printArea .apology-sign{position:absolute;bottom:18mm;right:15mm;line-height:2;font-weight:bold}#printArea .auth-page .official-table,#printArea .apology-page .official-table{width:100%;border-collapse:collapse;font-size:10pt}#printArea .auth-page .official-table th,#printArea .auth-page .official-table td,#printArea .apology-page .official-table th,#printArea .apology-page .official-table td{border:1px solid #222;padding:2mm;text-align:center}#printArea .auth-page .official-table td,#printArea .apology-page .official-table td{height:9mm}}
 
 .brand-logo{width:56px;height:56px;object-fit:contain;border-radius:14px;flex-shrink:0}.brand-mark{display:none}
 @media print{
  #printArea .letter-route{font-weight:700;text-align:center;margin-top:8mm;font-size:13pt}
- #printArea .apology-recipient{text-align:center;font-weight:700;margin:15mm 0 8mm}
- #printArea .committee-pair{display:flex;justify-content:space-between;align-items:flex-start;gap:5mm;margin-top:10mm}
+ #printArea .apology-recipient{text-align:center;font-weight:700;margin:5mm 0 3mm}
+ #printArea .committee-pair{display:flex;justify-content:space-between;align-items:flex-start;gap:5mm;margin-top:4mm}
  #printArea .committee-pair .committee{width:49%;margin-top:0;gap:2mm;font-size:9pt}
  #printArea .committee-pair .committee table{width:100%;margin-top:2mm}
  #printArea .committee-pair .committee th,#printArea .committee-pair .committee td{font-size:8.5pt;height:9mm;padding:.5mm}
@@ -271,6 +271,13 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .history-edit-row{border:1px solid #d9e5e1;border-radius:10px;padding:12px;margin:12px 0}
 .history-edit-row legend{font-weight:700;padding:0 6px}
 .history-edit-row label{display:block;margin:8px 0;font-size:13px;font-weight:600}
+
+/* Saved-history minutes: color-coded actions and delete at the lower-left edge. */
+.history-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.history-actions>button:nth-child(3){background:#e8bd35!important;border-color:#d2a51c!important;color:#202020!important}
+.history-actions>button:nth-child(4){background:#2878c8!important;border-color:#2168ad!important;color:#fff!important}
+.history-actions>button:nth-child(5){background:#800020!important;border-color:#680019!important;color:#fff!important}
+.history-actions>.history-delete-btn{background:#e5e7eb!important;border-color:#cbd0d6!important;color:#374151!important;margin-inline-start:auto;order:20}
 
 .quantity-edit-cell{min-width:105px;text-align:center}.doc-qty-edit-btn{display:block;margin:6px auto 0;padding:5px 9px!important;font-size:12px!important;white-space:nowrap}.inline-qty-label{display:block;font-size:12px;font-weight:700}.inline-qty-label input{display:block;width:90px;max-width:100%;min-height:38px;margin:4px auto;padding:6px;border:1px solid #b9ccc5;border-radius:7px;font:inherit;font-size:16px}.inline-qty-warning{min-width:180px;text-align:right}.inline-qty-actions{display:flex;flex-direction:column;gap:5px;min-width:130px}.inline-qty-actions button{font-size:12px!important;padding:7px!important}.inline-qty-actions [hidden]{display:none!important}
 
