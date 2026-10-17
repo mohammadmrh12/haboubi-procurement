@@ -500,6 +500,9 @@ function scoreItem(item, query) {
   const hits = words.filter(w => name.includes(w) || code.includes(w)).length;
   if (hits === words.length) return 700 + hits;
   if (hits) return 300 + hits * 10;
+  // Fuzzy edit-distance matching is expensive and adds little value for 1-3 character prefixes;
+  // direct prefix/substring matching above still handles normal incremental typing.
+  if (q.replace(/\s/g, "").length < 4) return 0;
   const candidateWords = name.split(" ").filter(w => w.length >= 2);
   const queryWords = q.split(" ").filter(Boolean);
   const qPhonetic = latinPhoneticKey(query);
@@ -650,6 +653,38 @@ function translateArabicQuery(query) {
 }
 
 // Review metadata is derived at runtime; never merge or rewrite source catalog records.
+// Build a linear-time index once per search instead of rescanning the entire catalogue for every item.
+let reviewIndexItems = null;
+let reviewIndex = new Map();
+function buildReviewIndex() {
+  reviewIndexItems = state.items;
+  reviewIndex = new Map();
+  const cores = new Map();
+  for (const item of state.items) {
+    const core = reviewCoreKey(item);
+    const spec = reviewSpecKey(item);
+    const entry = { core, spec, sameSpec: [item], variants: [], variantCount: 0 };
+    reviewIndex.set(item, entry);
+    if (!core) continue;
+    if (!cores.has(core)) cores.set(core, new Map());
+    const specs = cores.get(core);
+    if (!specs.has(spec)) specs.set(spec, []);
+    specs.get(spec).push(item);
+  }
+  // Group by core and exact spec in linear time; the search only needs a variant count,
+  // not a materialized list of every other variant.
+  for (const specs of cores.values()) {
+    let coreCount = 0;
+    for (const items of specs.values()) coreCount += items.length;
+    for (const [spec, items] of specs) {
+      for (const item of items) {
+        const entry = reviewIndex.get(item);
+        entry.sameSpec = items;
+        entry.variantCount = coreCount - items.length;
+      }
+    }
+  }
+}
 function reviewNameBase(item) {
   let value = String(item.name || item.permanentName || "")
     .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))?/gi, " ")
@@ -667,6 +702,8 @@ function reviewSpecKey(item) {
   return [reviewNameBase(item), norm(item.dose || item.specification || ""), norm(item.unit || ""), norm(item.kind || "")].join("|");
 }
 function reviewGroup(item) {
+  const indexed = reviewIndex.get(item);
+  if (indexed) return indexed;
   const core = reviewCoreKey(item);
   if (!core) return { sameSpec: [], variants: [] };
   const sameCore = state.items.filter(other => reviewCoreKey(other) === core);
@@ -682,7 +719,7 @@ function preferredNeedRecord(item) {
 }
 function reviewAlertText(item) {
   const group = reviewGroup(item);
-  if (group.variants.length) return "توجد سجلات للمادة بتركيز أو شكل أو مواصفة مختلفة. لا تُدمج تلقائياً؛ راجع المواصفة والاحتياج قبل اعتماد الشراء.";
+  if ((group.variantCount ?? group.variants.length) > 0) return "توجد سجلات للمادة بتركيز أو شكل أو مواصفة مختلفة. لا تُدمج تلقائياً؛ راجع المواصفة والاحتياج قبل اعتماد الشراء.";
   const needs = Array.isArray(item.needRecords) ? item.needRecords : [];
   const distinctNeeds = new Set(needs.filter(record => record.annual !== null && record.annual !== "" && Number.isFinite(Number(record.annual))).map(record => String(Number(record.annual))));
   if (group.sameSpec.length > 1 || distinctNeeds.size > 1) {
@@ -720,6 +757,7 @@ function search() {
     const btn = $("#emptyImport"); if (btn) btn.onclick = () => navigate("database");
     return;
   }
+  buildReviewIndex();
   const translatedTerms = (translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : []).concat(state.aiTerms);
   // Collapse exact duplicates by national code + full specification. Choose the
   // positive-need source record when one exists; never sum needs or collapse variants.
@@ -1090,7 +1128,13 @@ $("#addMaterialForm").addEventListener("submit", event => {
   $("#searchInput").value = nameAr;
   navigate("search"); search();
 });
-$("#searchInput").addEventListener("input", () => { state.aiTerms = []; search(); });
+let searchDebounceTimer = null;
+$("#searchInput").addEventListener("input", () => {
+  state.aiTerms = [];
+  if (searchDebounceTimer !== null) clearTimeout(searchDebounceTimer);
+  // Avoid running a full catalogue scan for every intermediate keystroke.
+  searchDebounceTimer = setTimeout(() => { searchDebounceTimer = null; search(); }, 140);
+});
 $("#clearSearch").onclick = () => { $("#searchInput").value = ""; state.aiTerms = []; search(); };
 const emptyImportButton = $("#emptyImport"); if (emptyImportButton) emptyImportButton.onclick = () => navigate("database");
 $("#fileInput").onchange = event => importFiles([...event.target.files]);

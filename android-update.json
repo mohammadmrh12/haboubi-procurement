@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 41,
-  "appVersionName": "1.4.5",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.5-source-needs",
+  "appVersionCode": 42,
+  "appVersionName": "1.4.6",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.6-search-performance",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إعادة تدقيق 21 ملزمة أصلية و32 ورقة؛ إصلاح استيراد أسماء المواد ذات الملاحظات الطويلة وصفوف الاحتياج التابعة، واستعادة احتياج السيفترياكسون 25000 والأدرينالين 100 و700، مع حفظ مصادر الاحتياج دون جمع القيم أو دمج المواصفات المختلفة."
+  "notes": "تحسين أداء البحث: بناء فهرس مراجعة خطي بدلاً من إعادة مسح القاعدة لكل مادة، وتأخير البحث 140ms بعد آخر حرف لتقليل التجمّد. جميع قيم الاحتياج ومصادرها محفوظة كما هي."
 }
