@@ -55,7 +55,7 @@ assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/ww
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(html, /app\.js\?v=82/, 'app asset should have an explicit cache version');
-assert.match(html, /forms-addon\.js\?v=72/, 'forms asset should have an explicit cache version');
+assert.match(html, /forms-addon\.js\?v=73/, 'forms asset should have an explicit cache version');
 
 assert.match(html, /styles\.css\?v=82/, 'updated input zoom CSS should be cache-busted');
 assert.match(html, /الإصدار 1\.5\.2/, 'website download label should match the published APK version');
@@ -71,8 +71,8 @@ assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/ww
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v111/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=82', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=72', 'catalog-seed.js?v=31', 'auth.js?v=11']) {
+assert.match(sw, /haboubi-procurement-v112/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=82', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=73', 'catalog-seed.js?v=31', 'auth.js?v=11']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
