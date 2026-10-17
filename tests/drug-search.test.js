@@ -16,7 +16,7 @@ const context = { window: {}, Map, Math, Array, String };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(root + '/drug-aliases.js', 'utf8'), context);
 vm.runInContext(helpers + searchFunctions + `this.score=(item,q)=>scoreItem(item,q); this.phonetic=latinPhoneticKey; this.norm=norm;`, context);
-const rankStart = app.indexOf('  const hits = state.items.map((item, index) => {');
+const rankStart = app.indexOf('  // Collapse exact duplicates by national code + full specification.');
 const rankEnd = app.indexOf('  if (!hits.length)', rankStart);
 assert.ok(rankStart >= 0 && rankEnd > rankStart, 'search result ranking block should exist');
 const rankingCode = app.slice(rankStart, rankEnd).replace(/^  /gm, '');

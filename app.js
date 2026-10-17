@@ -311,8 +311,24 @@ async function restoreData() {
     const seen = new Set(defaultBySignature.keys());
     for (const item of savedItems) {
       const key = signature(item), bundled = defaultBySignature.get(key);
-      // Preserve user-specific name overrides even when the item itself comes from the bundled catalog.
-      if (bundled && item.permanentName) bundled.permanentName = item.permanentName;
+      // Preserve user-specific values for an exact catalog identity. A positive need
+      // from an imported/saved workbook must not be discarded just because the bundled
+      // baseline contains zero or a blank need for the same code + name.
+      if (bundled) {
+        if (item.permanentName) bundled.permanentName = item.permanentName;
+        const savedNeed = item.annual == null || item.annual === "" ? null : Number(item.annual);
+        const bundledNeed = bundled.annual == null || bundled.annual === "" ? null : Number(bundled.annual);
+        if (Number.isFinite(savedNeed) && savedNeed > 0 && (!Number.isFinite(bundledNeed) || bundledNeed <= 0)) {
+          bundled.annual = savedNeed;
+          bundled.needRaw = item.needRaw || String(savedNeed);
+          bundled.review = false;
+          bundled.needSource = item.source || item.needSource || "سجل محفوظ للمستخدم";
+        }
+        if (Array.isArray(item.sources)) {
+          const known = new Set((bundled.sources || []).map(s => [s.source,s.sheet,s.row].join("|")));
+          bundled.sources = [...(bundled.sources || []), ...item.sources.filter(s => !known.has([s.source,s.sheet,s.row].join("|")))];
+        }
+      }
       if (!seen.has(key)) { merged.push(item); seen.add(key); }
     }
     const fileMap = new Map();
@@ -618,7 +634,18 @@ function search() {
     return;
   }
   const translatedTerms = (translatedQuery !== norm(query) ? translatedQuery.split(" ").filter(Boolean) : []).concat(state.aiTerms);
-  const hits = state.items.map((item, index) => {
+  // Collapse exact duplicates by national code + full specification. Choose the
+  // positive-need source record when one exists; never sum needs or collapse variants.
+  const candidates = new Map();
+  state.items.forEach((sourceItem, index) => {
+    const item = preferredNeedRecord(sourceItem);
+    const key = [norm(item.code).replace(/\s/g, ""), reviewSpecKey(item)].join("|");
+    const prior = candidates.get(key);
+    const need = item.annual == null || item.annual === "" ? -1 : Number(item.annual);
+    const priorNeed = prior && (prior.item.annual == null || prior.item.annual === "" ? -1 : Number(prior.item.annual));
+    if (!prior || (Number.isFinite(need) ? need : -1) > (Number.isFinite(priorNeed) ? priorNeed : -1)) candidates.set(key, { item, index });
+  });
+  const hits = [...candidates.values()].map(({item, index}) => {
     const scores = [scoreItem(item, query), scoreItem({...item,name:item.permanentName||item.name}, query), ...translatedTerms.map(term => Math.max(scoreItem(item, term), scoreItem({...item,name:item.permanentName||item.name}, term)))];
     const score = Math.max(...scores);
     const normalizedQuery = norm(query);

@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 39,
-  "appVersionName": "1.4.3",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.3-review-metadata",
+  "appVersionCode": 40,
+  "appVersionName": "1.4.4",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.4.4-need-selection",
   "catalogVersion": "2026.10.14.1",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "إضافة مرادفات من مصادر وزارة الصحة العراقية وتوسيع البحث للأدوية والمستلزمات والمواد المختبرية، فصل تنبيهات المراجعة والشراء عن الطباعة، وتفضيل سجل الاحتياج الموجب للمواصفة المتطابقة دون جمع الاحتياجات أو دمج المواصفات المختلفة."
+  "notes": "إصلاح اختيار سجل الاحتياج: الاحتفاظ بالاحتياج الموجب المحفوظ عند تطابق الرمز والاسم، وتوحيد نتائج السجلات المتطابقة في البحث دون جمع الاحتياجات أو دمج المواصفات المختلفة. تطبيق الإصلاح على الموقع وأندرويد."
 }
