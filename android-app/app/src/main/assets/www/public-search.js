@@ -15,5 +15,5 @@
   input.addEventListener('input',render);clear.addEventListener('click',()=>{input.value='';render();input.focus();});
   if(window.HABOUBI_DEFAULT_CATALOG&&Array.isArray(window.HABOUBI_DEFAULT_CATALOG.items)){items=window.HABOUBI_DEFAULT_CATALOG.items.filter(x=>x&&typeof x.name==='string'&&x.name.trim());status.textContent='قاعدة البحث جاهزة';render();}
   else {status.textContent='تعذر تحميل قاعدة البيانات. حدّث الصفحة أو أعد المحاولة.';}
-  if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=155').catch(()=>{}));
+  if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=156').catch(()=>{}));
 })();
