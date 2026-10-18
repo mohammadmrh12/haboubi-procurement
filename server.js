@@ -2,6 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 
 const ROOT = __dirname;
 const PRIVATE = path.join(ROOT, 'data', 'private');
@@ -95,8 +96,14 @@ function issueSession(userId, remember) {
   return 'haboubi_session=' + encodeURIComponent(token) + '; Path=/; HttpOnly; Secure; SameSite=Strict' + (remember ? '; Max-Age=31536000' : '');
 }
 function json(res, status, value, extra={}) {
-  res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...extra});
-  res.end(JSON.stringify(value));
+  const raw = Buffer.from(JSON.stringify(value));
+  const acceptsGzip = /(?:^|,)\s*gzip\s*(?:,|$)/i.test(String(res.req?.headers?.['accept-encoding'] || ''));
+  const compressed = acceptsGzip && raw.length >= 1024;
+  const body = compressed ? zlib.gzipSync(raw, { level: zlib.constants.Z_BEST_SPEED }) : raw;
+  const headers = {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Length':String(body.length),...extra};
+  if (compressed) { headers['Content-Encoding']='gzip'; headers['Vary']='Accept-Encoding'; }
+  res.writeHead(status, headers);
+  res.end(body);
 }
 function readBody(req, limit=12*1024*1024) {
   return new Promise((resolve,reject) => {

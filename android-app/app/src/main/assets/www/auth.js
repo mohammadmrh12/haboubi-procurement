@@ -23,9 +23,12 @@
         catch (err) { nativeRequests.delete(id); reject(new Error('تعذر بدء الاتصال بالخادم من تطبيق أندرويد')); }
       });
     }
-    const response = await fetch(url, { credentials:'same-origin', cache:'no-store', signal: options.signal || AbortSignal.timeout(12000), ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
-    const data = await response.json().catch(()=>({error:'استجابة غير مفهومة من الخادم'}));
-    if (!response.ok) {const err=new Error(data.error || 'تعذر إكمال الطلب');err.status=response.status;err.data=data;throw err;}
+    const response = await fetch(url, { credentials:'same-origin', cache:'no-store', signal: options.signal || AbortSignal.timeout(30000), ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
+    const raw = await response.text();
+    let data;
+    try { data = JSON.parse(raw || '{}'); }
+    catch { const type = response.headers.get('content-type') || 'unknown'; throw new Error('استجابة غير مفهومة من الخادم (HTTP '+response.status+'، '+type.split(';')[0]+'، '+raw.length+' حرف)'); }
+    if (!response.ok) {const err=new Error(data.error || 'تعذر إكمال الطلب (HTTP '+response.status+')');err.status=response.status;err.data=data;throw err;}
     return data;
   }
   async function unlock(user) {
