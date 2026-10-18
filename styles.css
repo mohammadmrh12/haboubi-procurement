@@ -335,3 +335,6 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 
 /* Prevent iOS Safari focus zoom on form controls throughout the site. */
 @media (max-width: 767px) { input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; } }
+
+/* Selective procurement minutes actions */
+.print-actions{flex-wrap:wrap;gap:8px;margin-top:12px}.print-actions button{min-height:42px}.minutes-receipt-btn{background:#d8a72e!important;color:#231b08!important;border:1px solid #b98b19!important}.minutes-evaluation-btn{background:#2563a6!important;color:#fff!important;border:1px solid #1d4f85!important}.minutes-referral-btn{background:#7a2438!important;color:#fff!important;border:1px solid #5e1b2b!important}.minutes-item-select{display:flex;align-items:center;gap:8px;grid-column:1/-1;background:#f3f7f5;border-radius:8px;padding:7px 9px;font-size:15px!important}.minutes-item-select input{width:20px!important;height:20px!important;min-height:20px!important;max-height:20px!important;accent-color:#1d6657}
