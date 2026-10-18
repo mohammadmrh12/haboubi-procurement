@@ -191,3 +191,5 @@ assert.match(publicHtml,/ثلاثة أشهر فقط/,'public page must state the
 assert.match(publicHtml,/ستة أشهر فقط/,'public page must state the six-month medical-supply limit');
 assert.match(publicHtml,/لجنة الصيدلة والعلاج/,'public page must explain committee escalation');
 assert.match(publicCss,/\.notes-panel/,'purchasing guidance must have a styled notes panel');
+
+assert.match(fs.readFileSync(path.join(root,'public-search.js'),'utf8'),/serviceWorker\.register\('\.\/sw\.js\?v=154'\)/,'public page must request the current service worker version');

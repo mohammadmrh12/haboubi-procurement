@@ -1,5 +1,5 @@
 const CACHE_NAME = "haboubi-procurement-v154";
-const ASSETS = ["./","./index.html","./public-search.html","./public-search.css?v=5","./public-search.js?v=2","./public-search-manifest.json","./styles.css?v=92","./drug-aliases.js?v=7","./app.js?v=92","./forms-addon.js?v=95","./catalog-seed.js?v=31","./auth.js?v=17","./manifest.json","./logo.svg?v=3","./apple-touch-icon-v3.png","./vendor/xlsx.full.min.js"];
+const ASSETS = ["./","./index.html","./public-search.html","./public-search.css?v=5","./public-search.js?v=3","./public-search-manifest.json","./styles.css?v=92","./drug-aliases.js?v=7","./app.js?v=92","./forms-addon.js?v=95","./catalog-seed.js?v=31","./auth.js?v=17","./manifest.json","./logo.svg?v=3","./apple-touch-icon-v3.png","./vendor/xlsx.full.min.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
