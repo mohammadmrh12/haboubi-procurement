@@ -42,6 +42,33 @@ const SECRET = fs.readFileSync(SECRET_FILE);
 const CODES = ['1111','2222','3333','4444','5555','6666','7777','8888','9999','0000'];
 const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon','.webmanifest':'application/manifest+json','.apk':'application/vnd.android.package-archive'};
 const attempts = new Map();
+const aiRequests = new Map();
+const AI_REQUEST_LIMIT = 12;
+const AI_WINDOW_MS = 60 * 1000;
+function setSecurityHeaders(res, req) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
+}
+function sameOriginMutation(req) {
+  if (!['POST', 'PUT', 'DELETE'].includes(req.method)) return true;
+  if (req.headers['sec-fetch-site'] === 'cross-site') return false;
+  const origin = req.headers.origin;
+  if (!origin) return true; // Native Android bridge does not necessarily send browser Origin.
+  try { return new URL(origin).host === String(req.headers.host || ''); } catch { return false; }
+}
+function allowAiRequest(userId) {
+  const now = Date.now();
+  for (const [key, times] of aiRequests) { const fresh = times.filter(t => now - t < AI_WINDOW_MS); if (fresh.length) aiRequests.set(key, fresh); else aiRequests.delete(key); }
+  const key = String(userId), recent = aiRequests.get(key) || [];
+  if (recent.length >= AI_REQUEST_LIMIT) return false;
+  recent.push(now); aiRequests.set(key, recent); return true;
+}
 function sign(value) { return crypto.createHmac('sha256', SECRET).update(value).digest('base64url'); }
 function cookie(req, name) {
   const all = (req.headers.cookie || '').split(';');
@@ -72,7 +99,17 @@ function json(res, status, value, extra={}) {
   res.end(JSON.stringify(value));
 }
 function readBody(req, limit=12*1024*1024) {
-  return new Promise((resolve,reject) => { let raw=''; req.on('data', chunk => { raw += chunk; if (Buffer.byteLength(raw)>limit) { reject(new Error('حجم الطلب كبير')); req.destroy(); } }); req.on('end',()=>{try{resolve(JSON.parse(raw||'{}'));}catch{reject(new Error('صيغة البيانات غير صحيحة'));}}); req.on('error',reject); });
+  return new Promise((resolve,reject) => {
+    const chunks=[]; let total=0, tooLarge=false, settled=false;
+    req.on('data', chunk => {
+      if (tooLarge) return;
+      total += chunk.length;
+      if (total > limit) { tooLarge=true; settled=true; reject(new Error('حجم الطلب كبير')); return; }
+      chunks.push(chunk);
+    });
+    req.on('end',()=>{ if (tooLarge) return; try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); } catch { reject(new Error('صيغة البيانات غير صحيحة')); } });
+    req.on('error',err=>{ if (!settled) reject(err); });
+  });
 }
 function readHistory() {
   let raw;
@@ -102,10 +139,14 @@ function safeStatic(urlPath) {
 }
 const server=http.createServer(async (req,res)=>{
   const url=new URL(req.url,'http://localhost');
-  res.setHeader('X-Content-Type-Options','nosniff');
+  setSecurityHeaders(res, req);
   if (url.pathname.startsWith('/api/')) {
+    if (!sameOriginMutation(req)) { json(res, 403, {error:'تم رفض الطلب لأنه ليس من نفس الموقع'}); return; }
     if (req.method==='POST' && url.pathname==='/api/login') {
-      const ip=req.socket.remoteAddress||'unknown'; const now=Date.now(); const recent=(attempts.get(ip)||[]).filter(t=>now-t<10*60*1000);
+      const ip=req.socket.remoteAddress||'unknown'; const now=Date.now();
+      for (const [key,times] of attempts) { const fresh=times.filter(t=>now-t<10*60*1000); if (fresh.length) attempts.set(key,fresh); else attempts.delete(key); }
+      if (attempts.size > 1000) attempts.delete(attempts.keys().next().value);
+      const recent=(attempts.get(ip)||[]).filter(t=>now-t<10*60*1000);
       if(recent.length>=30){json(res,429,{error:'محاولات كثيرة. انتظر عشر دقائق.'});return;}
       let body; try{body=await readBody(req,4096);}catch(e){json(res,400,{error:e.message});return;}
       const code=String(body.code||''); let userId=0;
@@ -119,6 +160,7 @@ const server=http.createServer(async (req,res)=>{
     if(!user){json(res,401,{error:'يلزم تسجيل الدخول'});return;}
     if(req.method==='GET' && url.pathname==='/api/session'){json(res,200,{ok:true,user});return;}
     if(req.method==='POST' && url.pathname==='/api/ai-search'){
+      if (!allowAiRequest(user.id)) { json(res,429,{error:'وصلت إلى الحد المؤقت لطلبات البحث الذكي؛ انتظر دقيقة ثم أعد المحاولة'}); return; }
       let body; try{body=await readBody(req,8192);}catch(e){json(res,400,{error:e.message});return;}
       const query=String(body.query||'').trim().slice(0,250);
       if(query.length<2){json(res,400,{error:'اكتب اسم المادة أو جزءاً منه'});return;}
@@ -134,6 +176,7 @@ const server=http.createServer(async (req,res)=>{
       } return;
     }
     if(req.method==='POST' && url.pathname==='/api/ai-review-print'){
+      if (!allowAiRequest(user.id)) { json(res,429,{error:'وصلت إلى الحد المؤقت لطلبات المراجعة الذكية؛ انتظر دقيقة ثم أعد المحاولة'}); return; }
       let body; try{body=await readBody(req,20000);}catch(e){json(res,400,{error:e.message});return;}
       const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,200),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,160)})):[];
       if(!items.length){json(res,400,{error:'لا توجد مواد للمراجعة'});return;}
@@ -205,7 +248,7 @@ const server=http.createServer(async (req,res)=>{
   if(!file){res.writeHead(404);res.end('Not found');return;}
   fs.stat(file,(err,st)=>{if(err||!st.isFile()){res.writeHead(404);res.end('Not found');return;}
     const ext=path.extname(file).toLowerCase();
-    res.writeHead(200,{'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'?'no-cache':'public, max-age=300','Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, HEAD, OPTIONS'});
+    res.writeHead(200,{'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'?'no-cache':'public, max-age=300'});
     if(req.method==='HEAD'){res.end();return;} fs.createReadStream(file).pipe(res);
   });
 });

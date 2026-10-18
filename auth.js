@@ -30,8 +30,19 @@
   }
   async function unlock(user) {
     currentUser = user;
-    gate.classList.add('auth-hidden');
-    document.body.classList.remove('auth-locked');
+    // Show a stable loading panel while local catalog readiness and cloud sync run in parallel.
+    // Do not expose the default search screen before the account data is reconciled.
+    gate.classList.remove('auth-hidden');
+    form.hidden = true;
+    let loading = $('#authLoading');
+    if (!loading) {
+      loading = document.createElement('div');
+      loading.id = 'authLoading';
+      loading.className = 'login-card';
+      loading.innerHTML = '<div class="auth-mark">م</div><h1>جارٍ تجهيز النظام</h1><p>يتم تحميل بيانات حسابك ومزامنتها…</p>';
+      gate.appendChild(loading);
+    }
+    loading.hidden = false;
     const title = document.querySelector('.top-actions');
     if (title && !$('#userSession')) {
       const label = document.createElement('span'); label.id='userSession'; label.className='user-session';
@@ -41,7 +52,11 @@
       logout.addEventListener('click', async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});}catch{}for(let i=1;i<=10;i++)sessionStorage.removeItem('haboubi-sync-user-'+i);location.reload();});
     }
     await syncUserData(user);
-    loadHistory();
+    await loadHistory(true);
+    loading.hidden = true;
+    form.hidden = false;
+    gate.classList.add('auth-hidden');
+    document.body.classList.remove('auth-locked');
   }
   form.addEventListener('submit', async e => {
     e.preventDefault(); error.textContent=''; const button=$('#loginSubmit'); button.disabled=true; button.textContent='جارٍ التحقق…';
@@ -73,12 +88,15 @@
     return {items:[...items.values()],files:[...files.values()],settings};
   }
   function hasActiveEdits(){return !!document.querySelector('.edit-name-dialog:not(.hidden), #minutesDialog, #historyEditDialog:not(.hidden), #editNameDialog:not(.hidden)') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');}
-  function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},12000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
-  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);location.reload();}catch(err){console.error('Continuous cloud sync failed',err);setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
+  function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},30000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
+  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);await (window.haboubiRefreshFromStorage?.()||Promise.resolve());}catch(err){console.error('Continuous cloud sync failed',err);setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
   async function syncUserData(user){
     try{
-      await (window.haboubiAppReady||Promise.resolve());
-      const result=await api('/api/data');
+      // Prepare the local catalog and fetch the account snapshot concurrently to reduce first-open delay.
+      const [, result] = await Promise.all([
+        window.haboubiAppReady || Promise.resolve(),
+        api('/api/data')
+      ]);
       const remote=result.data;
       const marker='haboubi-sync-user-'+user.id;
       const localOwner=localStorage.getItem('haboubiLocalUserId');
@@ -93,14 +111,15 @@
           settings.minutesPreferences=remotePrefs;
           applyRemoteData({...remote,settings},user.id);sessionStorage.setItem(marker,'1');lastServerUpdatedAt=revision;localDirty=false;
           if(migratedKeys.length){try{const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:remote.items||[],files:remote.files||[],settings}})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));}catch(err){console.error('Legacy preferences migration failed',err);}}
-          location.reload();return;
+          await (window.haboubiRefreshFromStorage?.()||Promise.resolve());
+          setSyncStatus('تمت مزامنة بيانات الحساب',true);startContinuousSync();return;
         }
         lastServerUpdatedAt=Math.max(revision,knownRevision);
       }else{
         if(localOwner&&localOwner!==String(user.id)){
           const embedded=window.HABOUBI_DEFAULT_CATALOG||{items:[],files:[]};
           applyRemoteData({items:embedded.items||[],files:embedded.files||[],settings:{},updatedAt:0},user.id);
-          sessionStorage.setItem(marker,'1');location.reload();return;
+          sessionStorage.setItem(marker,'1');await (window.haboubiRefreshFromStorage?.()||Promise.resolve());setSyncStatus('تم تحميل بيانات الحساب',true);startContinuousSync();return;
         }
         localStorage.setItem('haboubiLocalUserId',String(user.id));
         let local={items:[],files:[]},settings={};

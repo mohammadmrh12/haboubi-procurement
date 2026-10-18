@@ -43,6 +43,12 @@ async function freePort() {
 
     let response = await fetch(`${base}/api/session`);
     assert.equal(response.status, 401, 'unauthenticated session denied');
+    assert.equal(response.headers.get('x-frame-options'), 'DENY', 'API responses should prevent framing');
+    assert.match(response.headers.get('content-security-policy') || '', /frame-ancestors 'none'/, 'API responses should include CSP');
+    response = await fetch(`${base}/api/session`, { headers: { 'x-forwarded-proto': 'https' } });
+    assert.equal(response.headers.get('strict-transport-security'), 'max-age=31536000; includeSubDomains', 'HSTS should be enabled behind HTTPS tunnel');
+    response = await fetch(`${base}/api/login`, { method: 'POST', headers: { origin: 'https://attacker.example', 'content-type': 'application/json' }, body: JSON.stringify({ code: '1111', remember: true }) });
+    assert.equal(response.status, 403, 'cross-origin state-changing requests are denied');
     response = await fetch(`${base}/api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: 'not-it', remember: false }) });
     assert.equal(response.status, 401, 'invalid code denied');
     response = await fetch(`${base}/api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: '1111', remember: true }) });

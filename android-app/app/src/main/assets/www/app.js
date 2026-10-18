@@ -1322,4 +1322,5 @@ aboutDialog?.addEventListener("click", event => { if (event.target === aboutDial
 const printAuthorizationButton = $("#printAuthorization"); if (printAuthorizationButton) printAuthorizationButton.onclick = () => printDocument("authorization");
 const printApologyButton = $("#printApology"); if (printApologyButton) printApologyButton.onclick = () => printDocument("apology");
 if ($("#letterYear") && !$("#letterYear").value) populateYearSelect($("#letterYear"), new Date().getFullYear());
+window.haboubiRefreshFromStorage = async () => { await restoreData(); search(); };
 window.haboubiAppReady = restoreData().then(() => search()).catch(error => { console.error('Database initialization failed:', error); const status = $('#dbStatus'); if (status) status.textContent = 'تعذر تحميل قاعدة البيانات'; const results = $('#results'); if (results) results.innerHTML = '<div class="empty-state"><strong>تعذر تحميل قاعدة البيانات</strong><p>' + esc(error && error.message || 'خطأ غير معروف') + '</p><button class="secondary" onclick="location.reload()">إعادة المحاولة</button></div>'; });

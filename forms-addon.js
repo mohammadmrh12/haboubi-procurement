@@ -24,7 +24,7 @@ const startPrint=(viewId,areaId,html,printWindow=null)=>{
   return;
  }
  if(printWindow&&!printWindow.closed){
-  const css=new URL('styles.css?v=84',location.href).href;
+  const css=new URL('styles.css?v=91',location.href).href;
   const logoUrl=new URL('iraqi-ministry-health-logo.svg',location.href).href;
   html=html.replaceAll('src="iraqi-ministry-health-logo.svg"','src="'+logoUrl+'"');
   printWindow.document.open();
