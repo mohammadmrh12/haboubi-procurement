@@ -140,7 +140,7 @@
         const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:Array.isArray(local.items)?local.items:[],files:Array.isArray(local.files)?local.files:[],settings},baseUpdatedAt:0})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));sessionStorage.setItem(marker,'1');
       }
       setSyncStatus('المزامنة التلقائية مفعّلة',true);startContinuousSync();
-    }catch(err){console.error('Cloud data sync failed',err);setSyncStatus('تعذر الاتصال بالمزامنة؛ ستتم إعادة المحاولة تلقائياً',false);startContinuousSync();}
+    }catch(err){console.error('Cloud data sync failed',err);const detail=err?.name==='QuotaExceededError'?'مساحة التخزين المحلي ممتلئة':err?.name==='TimeoutError'?'انتهت مهلة الاتصال بالخادم':(err?.message||'خطأ غير معروف');setSyncStatus('تعذر المزامنة: '+detail,false);startContinuousSync();}
   }
   function scheduleDataSave(data){
     latestData=data;localDirty=true;try{localStorage.setItem('haboubiLocalDirty','1');}catch{}clearTimeout(dataSaveTimer);
