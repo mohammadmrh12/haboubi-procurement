@@ -1157,7 +1157,26 @@ const namePickerConfig = {
   authorized: { input: "#authorizedName", list: "authorizedNames", title: "اختيار المخوّل", button: "اختيار مخوّل" },
   storekeeper: { input: "#storekeeperName", list: "storekeeperNames", title: "اختيار أمين المخزن", button: "اختيار أمين مخزن" }
 };
-const closeNamePicker = () => { namePickerDialog?.classList.add("hidden"); $("#newSavedName").value = ""; };
+let namePickerScrollState = null;
+function lockNamePickerPageScroll() {
+  if (namePickerScrollState) return;
+  const body = document.body, root = document.documentElement;
+  const y = window.scrollY || root.scrollTop || 0;
+  namePickerScrollState = { y, bodyOverflow: body.style.overflow, bodyPosition: body.style.position, bodyTop: body.style.top, bodyWidth: body.style.width, rootOverflow: root.style.overflow };
+  root.style.overflow = "hidden";
+  body.style.overflow = "hidden";
+  body.style.position = "fixed";
+  body.style.top = `-${y}px`;
+  body.style.width = "100%";
+}
+function unlockNamePickerPageScroll() {
+  if (!namePickerScrollState) return;
+  const saved = namePickerScrollState; namePickerScrollState = null;
+  const body = document.body, root = document.documentElement;
+  body.style.overflow = saved.bodyOverflow; body.style.position = saved.bodyPosition; body.style.top = saved.bodyTop; body.style.width = saved.bodyWidth; root.style.overflow = saved.rootOverflow;
+  window.scrollTo(0, saved.y);
+}
+const closeNamePicker = () => { if (!namePickerDialog || namePickerDialog.classList.contains("hidden")) return; namePickerDialog.classList.add("hidden"); $("#newSavedName").value = ""; unlockNamePickerPageScroll(); };
 function persistNameLists(settings) {
   try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings)); } catch (error) { toast("تعذر حفظ الأسماء على هذا الجهاز"); return false; }
   state.settings = settings;
@@ -1217,7 +1236,7 @@ document.querySelectorAll("[data-name-picker]").forEach(button => button.addEven
   const config = namePickerConfig[activeNamePicker];
   $("#namePickerTitle").textContent = config.title;
   $("#namePickerDescription").textContent = "اختر اسماً محفوظاً لهذا المستخدم أو أضف اسماً جديداً.";
-  renderSavedNameList(); namePickerDialog.classList.remove("hidden");
+  lockNamePickerPageScroll(); renderSavedNameList(); namePickerDialog.classList.remove("hidden");
 }));
 $("#namePickerForm")?.addEventListener("submit", event => {
   event.preventDefault();

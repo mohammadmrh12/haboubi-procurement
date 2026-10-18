@@ -310,7 +310,10 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .name-picker-field{position:relative;display:flex;align-items:center;width:100%;min-width:0}
 .name-picker-field input{width:100%;min-width:0;padding-left:112px!important}
 .name-picker-button{position:absolute;left:5px;top:50%;transform:translateY(-50%);z-index:1;border:1px solid #b8d5c9;border-radius:8px;background:#eaf5ef;color:#145b47;padding:7px 9px;font-size:12px;font-weight:800;white-space:nowrap}
-.name-picker-card{width:min(100%,520px)}
+.name-picker-card{width:min(100%,520px);overscroll-behavior:contain;touch-action:pan-y; -webkit-overflow-scrolling:touch}
+#namePickerDialog{overscroll-behavior:none;touch-action:pan-y}
+#namePickerDialog .name-picker-card{max-height:calc(100vh - 36px);max-height:calc(100dvh - 36px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#namePickerDialog .saved-name-list{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 .name-picker-card>label{display:block;font-weight:700;margin:16px 0 6px}
 .name-picker-card input#newSavedName{display:block;width:100%;min-height:46px;border:1px solid #cbd8d4;border-radius:10px;padding:10px 12px;font:inherit;font-size:16px;background:#fff;color:var(--ink)}
 .saved-name-list{display:grid;gap:8px;max-height:min(38dvh,300px);overflow:auto;margin:14px 0}

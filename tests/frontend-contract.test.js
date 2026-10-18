@@ -58,15 +58,17 @@ assert.match(app, /data-edit-permanent/, 'search results should expose name edit
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(forms, /new URL\('iraqi-ministry-health-logo\.svg',location\.href\)/, 'separate print window must use an absolute ministry-logo URL');
 assert.match(forms, /querySelectorAll\('#printArea img'\)/, 'print should wait for logo images to load before opening the print dialog');
-assert.match(html, /app\.js\?v=82/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=83/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=85/, 'forms asset should have an explicit cache version');
+assert.match(app, /function lockNamePickerPageScroll[\s\S]*?body\.style\.position = \"fixed\"[\s\S]*?function unlockNamePickerPageScroll/, 'saved-name picker should lock background scrolling on iOS');
+assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#namePickerDialog \.saved-name-list\{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain\}/, 'saved-name list should contain touch scrolling inside the modal');
 
-assert.match(html, /styles\.css\?v=83/, 'updated input zoom CSS should be cache-busted');
+assert.match(html, /styles\.css\?v=84/, 'updated input zoom CSS should be cache-busted');
 assert.match(html, /الإصدار 1\.5\.4/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
-assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new URL\('styles\.css\?v=83',location\.href\)/, 'separate print window must load current print CSS');
+assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new URL\('styles\.css\?v=84',location\.href\)/, 'separate print window must load current print CSS');
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.style\.setProperty\('page-break-after','avoid','important'\)/, 'print generation must explicitly suppress a trailing blank page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\)\|\|localOwner!==String\(user\.id\)\|\|revision>knownRevision/, 'switching accounts must refresh local data even when a tab marker exists');
@@ -76,8 +78,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v124/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=83', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=85', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
+assert.match(sw, /haboubi-procurement-v125/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=84', 'drug-aliases.js?v=2', 'app.js?v=83', 'forms-addon.js?v=85', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
