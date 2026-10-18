@@ -149,3 +149,15 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /sessionStorag
 assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /body\.baseUpdatedAt!==undefined&&Number\(body\.baseUpdatedAt\)!==Number\(existing\?\.updatedAt\|\|0\)/, "server must reject stale writes instead of silently overwriting another device changes");
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /function mergeSyncData\(local,remote\)/, 'simultaneous device edits should be merged before retrying a save');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /err\.status=response\.status;err\.data=data/, 'client must detect revision conflicts and recover');
+
+
+const expandedAliases = JSON.parse(fs.readFileSync(path.join(root, "drug-aliases.js"), "utf8").replace(/^window\\.HABOUBI_DRUG_ALIASES\\s*=\\s*/, "").replace(/;\\s*$/, ""));
+const expandedAliasData = JSON.parse(fs.readFileSync(path.join(root, "drug-aliases.json"), "utf8"));
+assert.ok(Object.keys(expandedAliases).length >= 2500, "expanded drug/supply/lab alias dictionary should contain at least 2500 searchable aliases");
+for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون", "سرنجة", "كفوف جراحية", "شلفة", "تيوب بنفسجي", "شرائط السكر", "كواشف مختبرية"]) {
+  assert.ok(expandedAliases[alias.toLowerCase()], "expanded alias dictionary should include " + alias);
+}
+assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
+assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\\.js\\?v=4/, "website should load the expanded alias dictionary version");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v133/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\\.js\\?v=4/, "service worker should cache the expanded alias dictionary version");
