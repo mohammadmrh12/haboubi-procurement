@@ -347,3 +347,5 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 
 /* Pharmaceutical form badge: brown */
 .dosage-form-badge{color:#79502b;background:#f7efe5;border-color:#d9b995}.dosage-form-badge>span{font-weight:800;color:#79502b}
+
+.minutes-order-date-title{display:block!important;margin:10px 0 2px!important;font-size:15px!important;font-weight:700!important;color:var(--ink,#173b35)!important;text-align:right!important}
