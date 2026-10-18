@@ -42,6 +42,8 @@ assert.match(app, /\"سفيترايكزون\":\"ceftriaxone\"/, 'common Iraqi Ar
 assert.match(app, /needOnly: true/, 'continuation rows with merged name/code cells should preserve separate needs');
 assert.match(app, /data-edit-name/, 'document item list should expose a dedicated edit button');
 assert.match(html, /id=\"editNameDialog\"/, 'print name editing should use a popup dialog');
+assert.match(html, /<body class=\"auth-locked\">/, 'keep protected app content hidden while restoring the saved session');
+assert.match(html, /id=\"authGate\" class=\"auth-gate auth-hidden\"/, 'avoid flashing the login gate before session restoration completes');
 assert.match(html, /id=\"savePermanentName\"/, 'popup should support per-user permanent name changes');
 assert.match(html, /id=\"restoreOriginalName\"/, 'popup should support restoring original name');
 assert.match(app, /bundled\.permanentName = item\.permanentName/, 'per-user name overrides should survive merging the bundled catalog');
@@ -72,8 +74,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v123/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=83', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=84', 'catalog-seed.js?v=31', 'auth.js?v=13']) {
+assert.match(sw, /haboubi-procurement-v124/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=83', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=84', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
