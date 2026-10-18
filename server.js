@@ -135,7 +135,7 @@ const server=http.createServer(async (req,res)=>{
     }
     if(req.method==='POST' && url.pathname==='/api/ai-review-print'){
       let body; try{body=await readBody(req,20000);}catch(e){json(res,400,{error:e.message});return;}
-      const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,200),code:String(x.code||'').slice(0,100),qty:String(x.qty||'').slice(0,80),spec:String(x.spec||'').slice(0,160)})):[];
+      const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,200),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,160)})):[];
       if(!items.length){json(res,400,{error:'لا توجد مواد للمراجعة'});return;}
       try {
         const result=await geminiText('راجع مسودة كتاب إداري طبي قبل الطباعة. لا تغيّر ولا تستنتج الرمز الوطني أو الكمية أو الاسم الرسمي. اكتشف فقط النواقص والتعارضات الظاهرة من المدخلات، ولا تتحقق من صحة الرمز من دون مصدر. أرجع JSON {"warnings":["..."]} بالعربية، وبحد أقصى 6 تحذيرات قصيرة. بيانات الرأس: '+JSON.stringify({kind:String(body.kind||'').slice(0,60),year:String(body.year||'').slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,150),storekeeperName:String(body.storekeeperName||'').slice(0,150),recipient:String(body.recipient||'').slice(0,150)})+' المواد: '+JSON.stringify(items),700);
@@ -171,7 +171,7 @@ const server=http.createServer(async (req,res)=>{
       if(!id){json(res,400,{error:'معرّف العملية مطلوب'});return;}
       let body;try{body=await readBody(req);}catch(e){json(res,400,{error:e.message});return;}
       if(!Array.isArray(body.items)||!body.items.length||body.items.length>10){json(res,400,{error:'قائمة المواد غير صالحة'});return;}
-      const items=body.items.map(x=>({name:String(x.name||'').trim().slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty||'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)}));
+      const items=body.items.map(x=>({name:String(x.name||'').trim().slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)}));
       if(items.some(x=>!x.name)){json(res,400,{error:'اسم المادة مطلوب لكل صف'});return;}
       try{const rows=readHistory();const row=rows.find(x=>x.id===id&&x.userId===user.id);if(!row){json(res,404,{error:'العملية غير موجودة في سجل هذا المستخدم'});return;}row.items=items;row.year=String(body.year||row.year||new Date().getFullYear()).slice(0,4);row.authorizedName=String(body.authorizedName||'').slice(0,200);row.storekeeperName=String(body.storekeeperName||'').slice(0,200);row.updatedAt=Date.now();writeHistory(rows);json(res,200,{ok:true,item:row});}
       catch{json(res,500,{error:'تعذر حفظ التعديلات؛ سجل العمليات الحالي محفوظ ولم يتم استبداله'});}
@@ -191,7 +191,7 @@ const server=http.createServer(async (req,res)=>{
     if(req.method==='POST' && url.pathname==='/api/history'){
       let body; try{body=await readBody(req);}catch(e){json(res,400,{error:e.message});return;}
       const kind=['اعتذار','تخويل','اعتذار وتخويل','حزمة مستندات'].includes(body.kind)?body.kind:'اعتذار وتخويل';
-      const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty||'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)})).filter(x=>x.name):[];
+      const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)})).filter(x=>x.name):[];
       if(!items.length){json(res,400,{error:'لا توجد مواد لحفظها'});return;}
       const row={id:crypto.randomUUID(),userId:user.id,kind,createdAt:Date.now(),year:String(body.year||new Date().getFullYear()).slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,200),storekeeperName:String(body.storekeeperName||'').slice(0,200),items};
       try { const rows=readHistory(); rows.push(row); writeHistory(rows); }

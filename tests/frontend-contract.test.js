@@ -97,6 +97,8 @@ assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /textContent='
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /textContent='طباعة'/, "history has a print action");
 
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /haboubiLoadHistoryForEdit/, "history edit should load items into print page");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /requested:\(number\(saved\.qty\)\?\?number\(saved\.requested\)\?\?0\)/, "history restoration must parse grouped quantities and preserve valid nonzero values");
+assert.ok(fs.readFileSync(path.join(root, "server.js"), "utf8").includes("qty:String(x.qty??x.requested??'')"), "history API must preserve explicit numeric zero without treating it as missing");
 
 assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /c\[2\]\?\.querySelector\('span'\)/, "print forms should extract only quantity and never the edit button label");
 assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /data-add-direct/, "search results should allow direct addition to print page");
@@ -124,7 +126,7 @@ assert.match(fs.readFileSync(path.join(root, "forms-addon.js"), "utf8"), /queryS
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /qty:item\.requested\?\?item\.qty/, "history save must persist requested quantities");
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /zeroItems\.length&&!confirm/, "history editor must confirm before saving zero quantities");
 assert.match(fs.readFileSync(path.join(root, "auth.js"), "utf8"), /هذه العملية تحتوي .*مادة محفوظة بكمية صفر/, "history editor must warn when a saved operation already contains zero quantities");
-assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /saved\.qty\?\?saved\.requested/, "history edit must restore saved quantity field");
+assert.match(fs.readFileSync(path.join(root, "app.js"), "utf8"), /number\(saved\.qty\)\?\?number\(saved\.requested\)\?\?0/, "history edit must restore saved quantity field");
 
 assert.match(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), /function drugAliasScore[\s\S]*?latinPhoneticKey/, 'search should map brand names and phonetic Arabic spellings to generic ingredients');
 assert.doesNotMatch(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), /settings\.authorizedName\s*=\s*name/, 'authorized name must not be saved as a persistent field value');
