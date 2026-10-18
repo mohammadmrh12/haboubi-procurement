@@ -85,8 +85,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v132/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=84', 'drug-aliases.js?v=2', 'app.js?v=84', 'forms-addon.js?v=91', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
+assert.match(sw, /haboubi-procurement-v133/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=84', 'drug-aliases.js?v=2', 'app.js?v=84', 'forms-addon.js?v=92', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -161,3 +161,9 @@ assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias c
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\\.js\\?v=4/, "website should load the expanded alias dictionary version");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v133/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\\.js\\?v=4/, "service worker should cache the expanded alias dictionary version");
+
+assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printReceiptMinutes"[\s\S]*?id="printEvaluationMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
+assert.match(forms, /minutes-item-select[\s\S]*?إدراج هذه المادة في الطباعة/, "minutes forms should allow choosing which materials to include in print");
+assert.match(forms, /list\.filter\(x=>x\.selected!==false\)/, "minutes print table should include only selected materials");
+assert.match(forms, /haboubiPrintMinutesFromDocument/, "minutes actions should import materials from the current print document");
+assert.match(fs.readFileSync(path.join(root, "styles.css"), "utf8"), /\.minutes-receipt-btn[\s\S]*?\.minutes-evaluation-btn[\s\S]*?\.minutes-referral-btn/, "minutes action buttons should retain their assigned yellow, blue and burgundy colors");
