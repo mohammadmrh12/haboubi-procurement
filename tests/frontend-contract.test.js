@@ -58,7 +58,7 @@ assert.match(app, /data-edit-permanent/, 'search results should expose name edit
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(forms, /new URL\('iraqi-ministry-health-logo\.svg',location\.href\)/, 'separate print window must use an absolute ministry-logo URL');
 assert.match(forms, /querySelectorAll\('#printArea img'\)/, 'print should wait for logo images to load before opening the print dialog');
-assert.match(html, /app\.js\?v=91/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=92/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=95/, 'forms asset should have an explicit cache version');
 assert.match(html, /نبذة عن البرنامج[\s\S]*?نظام مشتريات مستشفى الحبوبي[\s\S]*?الرمز الوطني[\s\S]*?محاضر الاستلام والتقييم[\s\S]*?تم التصميم بواسطة الصيدلاني محمد رحيم حسب[\s\S]*?mailto:mohammad\.mrh4@gmail\.com/, 'about dialog should describe the system, retain designer credit, and include contact email');
 assert.match(forms, /#minutesDialog \.minutes-sign-field input\{font-size:16px!important\}/, 'committee member and chair inputs must stay at 16px on mobile to prevent iOS Safari focus zoom');
@@ -86,8 +86,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v148/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=91', 'forms-addon.js?v=95', 'catalog-seed.js?v=31', 'auth.js?v=17']) {
+assert.match(sw, /haboubi-procurement-v149/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=92', 'forms-addon.js?v=95', 'catalog-seed.js?v=31', 'auth.js?v=17']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -162,7 +162,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v148/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v149/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");

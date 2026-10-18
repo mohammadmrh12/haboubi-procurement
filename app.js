@@ -484,19 +484,21 @@ function drugAliasScore(item, query) {
 }
 function scoreItem(item, query) {
   const name = norm([item.name, item.nameAr, ...(Array.isArray(item.aliases) ? item.aliases : [])].filter(Boolean).join(" ")), code = norm(item.code), q = norm(query);
-  const brandScore = drugAliasScore(item, query);
   if (!q) return 0;
+  // Prioritize direct catalog-name/code matches before brand aliases. A broad alias must
+  // never outrank an item whose actual name directly matches the user's query.
+  if (code && code === q) return 1300;
+  if (name === q) return 1250;
+  if (name.startsWith(q)) return 1200;
+  if (name.includes(q)) return 1100;
+  if (code && code.startsWith(q)) return 1000;
+  if (code && code.includes(q)) return 800;
+  const brandScore = drugAliasScore(item, query);
   if (brandScore) return brandScore;
   const itemNameForSynonyms = norm([item.name,item.nameAr,item.genericName,item.scientificName].filter(Boolean).join(" "));
   const genericQuery = q.replace(/\b(?:hydrochloride|hydrobromide|sulfate|sulphate|sodium|potassium|tablet|capsule|oral)\b/g, " ").trim();
   const equivalents = DRUG_GENERIC_EQUIVALENTS[genericQuery] || [];
-  if (equivalents.some(term => itemNameForSynonyms.includes(norm(term)))) return 1120;
-  if (code && code === q) return 1200;
-  if (name === q) return 1150;
-  if (code && code.startsWith(q)) return 1000;
-  if (name.startsWith(q)) return 950;
-  if (name.includes(q)) return 850;
-  if (code && code.includes(q)) return 800;
+  if (equivalents.some(term => itemNameForSynonyms.includes(norm(term)))) return 700;
   const words = q.split(" ").filter(Boolean);
   const hits = words.filter(w => name.includes(w) || code.includes(w)).length;
   if (hits === words.length) return 700 + hits;
