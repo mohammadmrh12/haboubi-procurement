@@ -23,7 +23,7 @@
         catch (err) { nativeRequests.delete(id); reject(new Error('تعذر بدء الاتصال بالخادم من تطبيق أندرويد')); }
       });
     }
-    const response = await fetch(url, { credentials:'same-origin', cache:'no-store', ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
+    const response = await fetch(url, { credentials:'same-origin', cache:'no-store', signal: options.signal || AbortSignal.timeout(12000), ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
     const data = await response.json().catch(()=>({error:'استجابة غير مفهومة من الخادم'}));
     if (!response.ok) {const err=new Error(data.error || 'تعذر إكمال الطلب');err.status=response.status;err.data=data;throw err;}
     return data;
@@ -51,8 +51,20 @@
       title.prepend(logout,label);
       logout.addEventListener('click', async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});}catch{}for(let i=1;i<=10;i++)sessionStorage.removeItem('haboubi-sync-user-'+i);location.reload();});
     }
-    await syncUserData(user);
-    await loadHistory(true);
+    // A slow catalog restore or a stalled network request must never trap the user
+    // on the startup overlay indefinitely. Let sync continue in the background.
+    let startupFinished = false;
+    const startupTask = (async () => {
+      await syncUserData(user);
+      await loadHistory(true);
+      startupFinished = true;
+    })();
+    startupTask.catch(err => console.error('Startup preparation failed', err));
+    await Promise.race([startupTask, new Promise(resolve => setTimeout(resolve, 12000))]);
+    if (!startupFinished) {
+      console.warn('Startup sync is taking longer than expected; opening the app while sync continues.');
+      setSyncStatus('جارٍ استكمال مزامنة البيانات في الخلفية…', false);
+    }
     loading.hidden = true;
     form.hidden = false;
     gate.classList.add('auth-hidden');
