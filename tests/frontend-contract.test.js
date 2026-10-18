@@ -86,7 +86,7 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v152/, 'service-worker cache must be versioned');
+assert.match(sw, /haboubi-procurement-v153/, 'service-worker cache must be versioned');
 for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=92', 'forms-addon.js?v=95', 'catalog-seed.js?v=31', 'auth.js?v=17']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
@@ -169,7 +169,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v152/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v153/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
@@ -184,3 +184,10 @@ assert.doesNotMatch(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /setSyn
 assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /Content-Security-Policy[\s\S]*?frame-ancestors 'none'/, 'server should emit a restrictive content security policy');
 assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /function sameOriginMutation/, 'state-changing browser requests should be checked for same-origin');
 assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /AI_REQUEST_LIMIT = 12/, 'AI endpoints should have a per-user request limit');
+
+const publicCss=fs.readFileSync(path.join(root,'public-search.css'),'utf8');
+assert.match(publicHtml,/ملاحظات وتعليمات الشراء/,'public page must show purchasing guidance');
+assert.match(publicHtml,/ثلاثة أشهر فقط/,'public page must state the three-month medicine limit');
+assert.match(publicHtml,/ستة أشهر فقط/,'public page must state the six-month medical-supply limit');
+assert.match(publicHtml,/لجنة الصيدلة والعلاج/,'public page must explain committee escalation');
+assert.match(publicCss,/\.notes-panel/,'purchasing guidance must have a styled notes panel');
