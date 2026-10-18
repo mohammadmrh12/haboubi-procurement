@@ -171,6 +171,12 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .about-dialog.hidden{display:none!important}
 .about-dialog-card{position:relative;width:min(100%,360px);padding:30px 22px 24px;border-radius:20px;background:#fff;box-shadow:0 18px 60px #0003;text-align:center}
 .about-dialog-card h2{margin:10px 0;font-size:20px}
+.about-details-card{width:min(100%,520px);max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto}
+.about-description{text-align:right;color:var(--ink);font-weight:400;font-size:15px;line-height:1.9;margin:14px 0}
+.about-description p{color:inherit;font-weight:400;margin:0 0 10px}
+.about-dialog-card .about-credit-line{margin:14px 0 4px;font-size:14px;line-height:1.8}
+.about-dialog-card .about-contact{margin:0 0 18px;font-size:14px;line-height:1.8;color:var(--ink);font-weight:600}
+.about-contact a{color:var(--green);direction:ltr;unicode-bidi:embed;overflow-wrap:anywhere}
 .about-dialog-card p{line-height:2;font-weight:800;color:var(--green);margin:12px 0 22px}
 .about-mark{width:48px;height:48px;border-radius:15px;margin:auto;display:grid;place-items:center;background:var(--green2);color:var(--green);font-size:27px;font-weight:800}
 .about-close{position:absolute;top:8px;left:10px;border:0;background:transparent;font-size:28px;color:var(--muted);padding:2px 8px}

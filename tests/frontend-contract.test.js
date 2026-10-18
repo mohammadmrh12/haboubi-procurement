@@ -58,8 +58,9 @@ assert.match(app, /data-edit-permanent/, 'search results should expose name edit
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(forms, /new URL\('iraqi-ministry-health-logo\.svg',location\.href\)/, 'separate print window must use an absolute ministry-logo URL');
 assert.match(forms, /querySelectorAll\('#printArea img'\)/, 'print should wait for logo images to load before opening the print dialog');
-assert.match(html, /app\.js\?v=83/, 'app asset should have an explicit cache version');
+assert.match(html, /app\.js\?v=84/, 'app asset should have an explicit cache version');
 assert.match(html, /forms-addon\.js\?v=91/, 'forms asset should have an explicit cache version');
+assert.match(html, /نبذة عن البرنامج[\s\S]*?نظام مشتريات مستشفى الحبوبي[\s\S]*?الرمز الوطني[\s\S]*?محاضر الاستلام والتقييم[\s\S]*?تم التصميم بواسطة الصيدلاني محمد رحيم حسب[\s\S]*?mailto:mohammad\.mrh4@gmail\.com/, 'about dialog should describe the system, retain designer credit, and include contact email');
 assert.match(forms, /#minutesDialog \.minutes-sign-field input\{font-size:16px!important\}/, 'committee member and chair inputs must stay at 16px on mobile to prevent iOS Safari focus zoom');
 assert.match(forms, /datePartDropdown\('orderMonth','الشهر',12\)[\s\S]*?datePartDropdown\('orderDay','اليوم',31\)/, 'receipt and evaluation administrative-order dates should use month/day dropdowns');
 assert.match(forms, /الجهة المرتبطة بلجنة المشتريات[\s\S]*?select\('place',getCustom\('place',places\)\)/, 'referral place field should be identified as the entity linked to the purchasing committee');
@@ -84,8 +85,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v131/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=84', 'drug-aliases.js?v=2', 'app.js?v=83', 'forms-addon.js?v=91', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
+assert.match(sw, /haboubi-procurement-v132/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=84', 'drug-aliases.js?v=2', 'app.js?v=84', 'forms-addon.js?v=91', 'catalog-seed.js?v=31', 'auth.js?v=14']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
