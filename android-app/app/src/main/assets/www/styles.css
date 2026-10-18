@@ -322,3 +322,7 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
 .saved-name-action.delete{color:#a32222;border-color:#edcaca}
 .saved-name-option:active,.saved-name-option:hover{border-color:var(--green);background:var(--green2)}
 .saved-name-empty{padding:18px 12px;text-align:center;border:1px dashed #cbd8d4;border-radius:10px;color:var(--muted);font-size:13px}
+
+
+/* Prevent iOS Safari focus zoom on form controls throughout the site. */
+@media (max-width: 767px) { input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; } }

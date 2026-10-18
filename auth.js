@@ -49,48 +49,74 @@
     catch(err){error.textContent=err.message;code.select();}
     finally{button.disabled=false;button.textContent='دخول';}
   });
-  let dataSaveTimer=null, latestData=null;
+  let dataSaveTimer=null, latestData=null, lastServerUpdatedAt=0, syncTimer=null, syncBusy=false, localDirty=false;
+  const CLOUD_REVISION_KEY='haboubiCloudUpdatedAt';
+  function setSyncStatus(message, ok=false){const status=$('#dbStatus');if(status){status.textContent=message;status.dataset.sync=ok?'ok':'error';}}
+  function readLocalMinutePreferences(){const prefs={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key||!key.startsWith('haboubiMinutes:'))continue;const rawKey=key.slice('haboubiMinutes:'.length);try{prefs[rawKey.startsWith('selected:')?rawKey:'custom:'+rawKey]=rawKey.startsWith('selected:')?localStorage.getItem(key):JSON.parse(localStorage.getItem(key)||'[]');}catch{}}return prefs;}
+  function applyRemoteData(data,userId){
+    for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key&&key.startsWith('haboubiMinutes:'))localStorage.removeItem(key);}
+    localStorage.setItem('haboubiDataV2',JSON.stringify({items:Array.isArray(data.items)?data.items:[],files:Array.isArray(data.files)?data.files:[]}));
+    const settings=data.settings&&typeof data.settings==='object'?data.settings:{};
+    localStorage.setItem('haboubiSettings',JSON.stringify(settings));
+    localStorage.setItem('haboubiLocalUserId',String(userId));
+    localStorage.setItem(CLOUD_REVISION_KEY,String(Number(data.updatedAt)||0));
+    const prefs=settings.minutesPreferences&&typeof settings.minutesPreferences==='object'?settings.minutesPreferences:{};
+    Object.entries(prefs).forEach(([key,value])=>{if(key.startsWith('custom:'))localStorage.setItem('haboubiMinutes:'+key.slice(7),JSON.stringify(Array.isArray(value)?value:[]));else if(key.startsWith('selected:')){const prefKey=key.slice(9);if(value===null||value==='')localStorage.removeItem('haboubiMinutes:selected:'+prefKey);else localStorage.setItem('haboubiMinutes:selected:'+prefKey,String(value));}});
+  }
+  function hasActiveEdits(){return !!document.querySelector('.edit-name-dialog:not(.hidden), #minutesDialog, #historyEditDialog:not(.hidden), #editNameDialog:not(.hidden)') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');}
+  function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},12000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
+  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);location.reload();}catch(err){console.error('Continuous cloud sync failed',err);setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
   async function syncUserData(user){
     try{
       await (window.haboubiAppReady||Promise.resolve());
       const result=await api('/api/data');
-      if(result.data){
-        const marker='haboubi-sync-user-'+user.id;
-        const localOwner=localStorage.getItem('haboubiLocalUserId');
-        // A per-tab marker is not enough: a different user may have logged in in this tab.
-        // Always replace local account data when its owner differs from the authenticated user.
-        if(!sessionStorage.getItem(marker) || localOwner!==String(user.id)){
-          localStorage.setItem('haboubiDataV2',JSON.stringify({items:result.data.items||[],files:result.data.files||[]}));
-          localStorage.setItem('haboubiSettings',JSON.stringify(result.data.settings||{}));
-          localStorage.setItem('haboubiLocalUserId',String(user.id));
-          sessionStorage.setItem(marker,'1');location.reload();return;
+      const remote=result.data;
+      const marker='haboubi-sync-user-'+user.id;
+      const localOwner=localStorage.getItem('haboubiLocalUserId');
+      if(remote){
+        const revision=Number(remote.updatedAt)||0;
+        const knownRevision=Number(localStorage.getItem(CLOUD_REVISION_KEY)||0);
+        if(!sessionStorage.getItem(marker)||localOwner!==String(user.id)||revision>knownRevision){
+          const settings=remote.settings&&typeof remote.settings==='object'?{...remote.settings}:{};
+          const remotePrefs=settings.minutesPreferences&&typeof settings.minutesPreferences==='object'?{...settings.minutesPreferences}:{};
+          const legacyPrefs=localOwner===String(user.id)?readLocalMinutePreferences():{};
+          const migratedKeys=[];for(const [key,value] of Object.entries(legacyPrefs)){if(!Object.prototype.hasOwnProperty.call(remotePrefs,key)){remotePrefs[key]=value;migratedKeys.push(key);}}
+          settings.minutesPreferences=remotePrefs;
+          applyRemoteData({...remote,settings},user.id);sessionStorage.setItem(marker,'1');lastServerUpdatedAt=revision;localDirty=false;
+          if(migratedKeys.length){try{const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:remote.items||[],files:remote.files||[],settings}})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));}catch(err){console.error('Legacy preferences migration failed',err);}}
+          location.reload();return;
         }
+        lastServerUpdatedAt=Math.max(revision,knownRevision);
       }else{
-        const localOwner=localStorage.getItem('haboubiLocalUserId');
-        if(localOwner && localOwner!==String(user.id)){
+        if(localOwner&&localOwner!==String(user.id)){
           const embedded=window.HABOUBI_DEFAULT_CATALOG||{items:[],files:[]};
-          localStorage.setItem('haboubiDataV2',JSON.stringify({items:embedded.items||[],files:embedded.files||[]}));
-          localStorage.setItem('haboubiSettings','{}');localStorage.setItem('haboubiLocalUserId',String(user.id));
-          sessionStorage.setItem('haboubi-sync-user-'+user.id,'1');location.reload();return;
+          applyRemoteData({items:embedded.items||[],files:embedded.files||[],settings:{},updatedAt:0},user.id);
+          sessionStorage.setItem(marker,'1');location.reload();return;
         }
         localStorage.setItem('haboubiLocalUserId',String(user.id));
         let local={items:[],files:[]},settings={};
         try{local=JSON.parse(localStorage.getItem('haboubiDataV2')||'{"items":[],"files":[]}');}catch{}
         try{settings=JSON.parse(localStorage.getItem('haboubiSettings')||'{}');}catch{}
-        await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:Array.isArray(local.items)?local.items:[],files:Array.isArray(local.files)?local.files:[],settings}})});
+        const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:Array.isArray(local.items)?local.items:[],files:Array.isArray(local.files)?local.files:[],settings}})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));sessionStorage.setItem(marker,'1');
       }
-    }catch(err){console.error('Cloud data sync failed',err);}
+      setSyncStatus('المزامنة التلقائية مفعّلة',true);startContinuousSync();
+    }catch(err){console.error('Cloud data sync failed',err);setSyncStatus('تعذر الاتصال بالمزامنة؛ ستتم إعادة المحاولة تلقائياً',false);startContinuousSync();}
   }
   function scheduleDataSave(data){
-    latestData=data;clearTimeout(dataSaveTimer);
+    latestData=data;localDirty=true;try{localStorage.setItem('haboubiLocalDirty','1');}catch{}clearTimeout(dataSaveTimer);
+    setSyncStatus('جارٍ حفظ التعديلات ومزامنتها…',true);
     dataSaveTimer=setTimeout(async()=>{
+      dataSaveTimer=null;
       if(!currentUser||!latestData)return;
-      try{await api('/api/data',{method:'PUT',body:JSON.stringify({data:latestData})});}
-      catch(err){console.error('Cloud data save failed',err);const status=$('#dbStatus');if(status)status.textContent='تعذر مزامنة البيانات مع الموقع';}
+      try{const result=await api('/api/data',{method:'PUT',body:JSON.stringify({data:latestData})});lastServerUpdatedAt=Number(result.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));localDirty=false;try{localStorage.removeItem('haboubiLocalDirty');}catch{}setSyncStatus('تم حفظ التعديلات ومزامنتها',true);}
+      catch(err){console.error('Cloud data save failed',err);setSyncStatus('تعذر مزامنة البيانات؛ ستتم إعادة المحاولة تلقائياً',false);setTimeout(()=>{if(currentUser&&latestData)scheduleDataSave(latestData);},5000);}
     },650);
   }
-  async function loadHistory(){
-    const list=$('#historyList'); if(!list)return; list.innerHTML='<p class="muted">جارٍ تحميل السجل…</p>';
+  function saveMinutePreference(key,value){
+    try{const settings=JSON.parse(localStorage.getItem('haboubiSettings')||'{}');settings.minutesPreferences=settings.minutesPreferences||{};settings.minutesPreferences[key]=value;localStorage.setItem('haboubiSettings',JSON.stringify(settings));const raw=JSON.parse(localStorage.getItem('haboubiDataV2')||'{"items":[],"files":[]}');scheduleDataSave({items:Array.isArray(raw.items)?raw.items:[],files:Array.isArray(raw.files)?raw.files:[],settings});return true;}catch(err){console.error('Minute preference sync failed',err);return false;}
+  }
+  async function loadHistory(quiet=false){
+    const list=$('#historyList'); if(!list)return; if(!quiet)list.innerHTML='<p class="muted">جارٍ تحميل السجل…</p>';
     try{
       const result=await api('/api/history'); const rows=result.items||[];
       if(!rows.length){list.innerHTML='<p class="muted">لا توجد عمليات محفوظة لهذا المستخدم حتى الآن.</p>';return;}
@@ -137,6 +163,7 @@
     get user(){return currentUser;},
     api,
     scheduleDataSave,
+    saveMinutePreference,
     async saveOperation(items){
       const normalizedItems=(Array.isArray(items)?items:[]).map(item=>({
         name:item.formName||item.name||'',

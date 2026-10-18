@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 48,
-  "appVersionName": "1.5.2",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.2-shared-names",
+  "appVersionCode": 49,
+  "appVersionName": "1.5.3",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.3-continuous-sync",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "توحيد قائمة الأسماء المحفوظة للمخوّل وأمين المخزن. أي اسم محفوظ في إحدى القائمتين يظهر في الأخرى، وإضافة الاسم أو تعديله أو حذفه ينعكس على القائمتين لهذا المستخدم."
+  "notes": "مزامنة تلقائية مستمرة لبيانات المستخدم وإعداداته وسجل العمليات وتفضيلات النماذج بين أجهزته، مع فصل البيانات بين المستخدمين."
 }

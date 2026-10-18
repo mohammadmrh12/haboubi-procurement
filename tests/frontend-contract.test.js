@@ -55,24 +55,25 @@ assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/ww
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
 assert.match(html, /app\.js\?v=82/, 'app asset should have an explicit cache version');
-assert.match(html, /forms-addon\.js\?v=77/, 'forms asset should have an explicit cache version');
+assert.match(html, /forms-addon\.js\?v=84/, 'forms asset should have an explicit cache version');
 
-assert.match(html, /styles\.css\?v=82/, 'updated input zoom CSS should be cache-busted');
-assert.match(html, /الإصدار 1\.5\.2/, 'website download label should match the published APK version');
+assert.match(html, /styles\.css\?v=83/, 'updated input zoom CSS should be cache-busted');
+assert.match(html, /الإصدار 1\.5\.3/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new URL\('styles\.css\?v=82',location\.href\)/, 'separate print window must load current print CSS');
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.style\.setProperty\('page-break-after','avoid','important'\)/, 'print generation must explicitly suppress a trailing blank page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
-assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\) \|\| localOwner!==String\(user\.id\)/, 'switching accounts must refresh local data even when a tab marker exists');
-assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.5\.2'/, 'in-app updater version must match the installed app version');
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\)\|\|localOwner!==String\(user\.id\)\|\|revision>knownRevision/, 'switching accounts must refresh local data even when a tab marker exists');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.5\.3'/, 'in-app updater version must match the installed app version');
 
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.match(sw, /haboubi-procurement-v115/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=82', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=77', 'catalog-seed.js?v=31', 'auth.js?v=11']) {
+assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
+assert.match(sw, /haboubi-procurement-v122/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=83', 'drug-aliases.js?v=2', 'app.js?v=82', 'forms-addon.js?v=84', 'catalog-seed.js?v=31', 'auth.js?v=12']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 console.log('PASS: shortened item names, print payload, versioned offline precache, and shared Android JS parity.');
@@ -126,3 +127,8 @@ assert.match(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), /saved-name-act
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.saved-name-row\{display:flex;align-items:stretch;gap:6px;min-width:0\}/, 'saved name actions should sit alongside the name row');
 
 assert.match(fs.readFileSync(path.join(root, 'app.js'), 'utf8'), /settings\.authorizedNames = names\.slice\(\); settings\.storekeeperNames = names\.slice\(\)/, 'adding a saved name should synchronize authorized and storekeeper lists');
+
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /setInterval\(\(\)=>\{if\(document\.visibilityState==='visible'\)pollRemoteData\(\);\},12000\)/, 'user data must poll for remote edits continuously');
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /saveMinutePreference/, 'per-user dropdown preferences must be persisted to the cloud');
+assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /saveMinutePreference\('custom:'\+key,old\)/, 'new custom dropdown options must sync across devices');
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /sessionStorage\.setItem\('haboubi-sync-user-'\+currentUser\.id,'1'\)/, 'continuous sync must mark the current account before reload to prevent a refresh loop');
