@@ -132,3 +132,7 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /setInterval\(
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /saveMinutePreference/, 'per-user dropdown preferences must be persisted to the cloud');
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /saveMinutePreference\('custom:'\+key,old\)/, 'new custom dropdown options must sync across devices');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /sessionStorage\.setItem\('haboubi-sync-user-'\+currentUser\.id,'1'\)/, 'continuous sync must mark the current account before reload to prevent a refresh loop');
+
+assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /body\.baseUpdatedAt!==undefined&&Number\(body\.baseUpdatedAt\)!==Number\(existing\?\.updatedAt\|\|0\)/, "server must reject stale writes instead of silently overwriting another device changes");
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /function mergeSyncData\(local,remote\)/, 'simultaneous device edits should be merged before retrying a save');
+assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /err\.status=response\.status;err\.data=data/, 'client must detect revision conflicts and recover');

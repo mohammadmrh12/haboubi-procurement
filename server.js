@@ -151,9 +151,11 @@ const server=http.createServer(async (req,res)=>{
       let body; try{body=await readBody(req);}catch(e){json(res,400,{error:e.message});return;}
       if(!body.data || !Array.isArray(body.data.items) || !Array.isArray(body.data.files) || typeof body.data.settings!=='object' || body.data.settings===null || Array.isArray(body.data.settings)) {json(res,400,{error:'بيانات الحفظ غير مكتملة'});return;}
       try {
-        const users=readUserData(); users[String(user.id)]={updatedAt:Math.max(Date.now(),Number(users[String(user.id)]?.updatedAt||0)+1),items:body.data.items,files:body.data.files,settings:body.data.settings};
+        const users=readUserData(), key=String(user.id), existing=users[key]||null;
+        if(body.baseUpdatedAt!==undefined&&Number(body.baseUpdatedAt)!==Number(existing?.updatedAt||0)){json(res,409,{error:'توجد تعديلات أحدث من جهاز آخر؛ ستتم مزامنتها ودمجها قبل الحفظ',data:existing});return;}
+        users[key]={updatedAt:Math.max(Date.now(),Number(existing?.updatedAt||0)+1),items:body.data.items,files:body.data.files,settings:body.data.settings};
         writeUserData(users);
-        json(res,200,{ok:true,updatedAt:users[String(user.id)].updatedAt});
+        json(res,200,{ok:true,updatedAt:users[key].updatedAt});
       } catch { json(res,500,{error:'تعذر حفظ قاعدة بيانات المستخدمين؛ البيانات الحالية محفوظة ولم يتم استبدالها'}); }
       return;
     }

@@ -10,7 +10,7 @@
     nativeRequests.delete(String(id));
     let data; try { data = JSON.parse(raw || '{}'); } catch { data = {error:'استجابة غير مفهومة من الخادم'}; }
     if (status >= 200 && status < 300) pending.resolve(data);
-    else pending.reject(new Error(data.error || 'تعذر إكمال الطلب (' + status + ')'));
+    else { const err=new Error(data.error || 'تعذر إكمال الطلب (' + status + ')');err.status=status;err.data=data;pending.reject(err); }
   };
   async function api(url, options={}) {
     const method = String(options.method || 'GET').toUpperCase();
@@ -25,7 +25,7 @@
     }
     const response = await fetch(url, { credentials:'same-origin', cache:'no-store', ...options, headers:{'Content-Type':'application/json', ...(options.headers||{})} });
     const data = await response.json().catch(()=>({error:'استجابة غير مفهومة من الخادم'}));
-    if (!response.ok) throw new Error(data.error || 'تعذر إكمال الطلب');
+    if (!response.ok) {const err=new Error(data.error || 'تعذر إكمال الطلب');err.status=response.status;err.data=data;throw err;}
     return data;
   }
   async function unlock(user) {
@@ -63,6 +63,15 @@
     const prefs=settings.minutesPreferences&&typeof settings.minutesPreferences==='object'?settings.minutesPreferences:{};
     Object.entries(prefs).forEach(([key,value])=>{if(key.startsWith('custom:'))localStorage.setItem('haboubiMinutes:'+key.slice(7),JSON.stringify(Array.isArray(value)?value:[]));else if(key.startsWith('selected:')){const prefKey=key.slice(9);if(value===null||value==='')localStorage.removeItem('haboubiMinutes:selected:'+prefKey);else localStorage.setItem('haboubiMinutes:selected:'+prefKey,String(value));}});
   }
+  function mergeSyncData(local,remote){
+    const signature=item=>{const key=[String(item.code||'').trim().toLowerCase(),String(item.name||'').trim().toLowerCase()].join('|');return key==='|'?JSON.stringify(item):key;};
+    const items=new Map((Array.isArray(remote.items)?remote.items:[]).map(item=>[signature(item),item]));
+    for(const item of (Array.isArray(local.items)?local.items:[])){const key=signature(item);items.set(key,items.has(key)?{...items.get(key),...item}:item);}
+    const files=new Map();for(const file of [...(remote.files||[]),...(local.files||[])]){const key=String(file.name||file.source||JSON.stringify(file));if(!files.has(key))files.set(key,file);}
+    const remoteSettings=remote.settings&&typeof remote.settings==='object'?remote.settings:{};const localSettings=local.settings&&typeof local.settings==='object'?local.settings:{};
+    const settings={...remoteSettings,...localSettings,minutesPreferences:{...(remoteSettings.minutesPreferences||{}),...(localSettings.minutesPreferences||{})}};
+    return {items:[...items.values()],files:[...files.values()],settings};
+  }
   function hasActiveEdits(){return !!document.querySelector('.edit-name-dialog:not(.hidden), #minutesDialog, #historyEditDialog:not(.hidden), #editNameDialog:not(.hidden)') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');}
   function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},12000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
   async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);location.reload();}catch(err){console.error('Continuous cloud sync failed',err);setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
@@ -97,7 +106,7 @@
         let local={items:[],files:[]},settings={};
         try{local=JSON.parse(localStorage.getItem('haboubiDataV2')||'{"items":[],"files":[]}');}catch{}
         try{settings=JSON.parse(localStorage.getItem('haboubiSettings')||'{}');}catch{}
-        const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:Array.isArray(local.items)?local.items:[],files:Array.isArray(local.files)?local.files:[],settings}})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));sessionStorage.setItem(marker,'1');
+        const saved=await api('/api/data',{method:'PUT',body:JSON.stringify({data:{items:Array.isArray(local.items)?local.items:[],files:Array.isArray(local.files)?local.files:[],settings},baseUpdatedAt:0})});lastServerUpdatedAt=Number(saved.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));sessionStorage.setItem(marker,'1');
       }
       setSyncStatus('المزامنة التلقائية مفعّلة',true);startContinuousSync();
     }catch(err){console.error('Cloud data sync failed',err);setSyncStatus('تعذر الاتصال بالمزامنة؛ ستتم إعادة المحاولة تلقائياً',false);startContinuousSync();}
@@ -108,8 +117,8 @@
     dataSaveTimer=setTimeout(async()=>{
       dataSaveTimer=null;
       if(!currentUser||!latestData)return;
-      try{const result=await api('/api/data',{method:'PUT',body:JSON.stringify({data:latestData})});lastServerUpdatedAt=Number(result.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));localDirty=false;try{localStorage.removeItem('haboubiLocalDirty');}catch{}setSyncStatus('تم حفظ التعديلات ومزامنتها',true);}
-      catch(err){console.error('Cloud data save failed',err);setSyncStatus('تعذر مزامنة البيانات؛ ستتم إعادة المحاولة تلقائياً',false);setTimeout(()=>{if(currentUser&&latestData)scheduleDataSave(latestData);},5000);}
+      try{const result=await api('/api/data',{method:'PUT',body:JSON.stringify({data:latestData,baseUpdatedAt:lastServerUpdatedAt})});lastServerUpdatedAt=Number(result.updatedAt)||Date.now();localStorage.setItem(CLOUD_REVISION_KEY,String(lastServerUpdatedAt));localDirty=false;try{localStorage.removeItem('haboubiLocalDirty');}catch{}setSyncStatus('تم حفظ التعديلات ومزامنتها',true);}
+      catch(err){if(err.status===409&&err.data?.data){latestData=mergeSyncData(latestData,err.data.data);lastServerUpdatedAt=Number(err.data.data.updatedAt)||0;try{localStorage.setItem('haboubiDataV2',JSON.stringify({items:latestData.items,files:latestData.files}));localStorage.setItem('haboubiSettings',JSON.stringify(latestData.settings));}catch{}scheduleDataSave(latestData);return;}console.error('Cloud data save failed',err);setSyncStatus('تعذر مزامنة البيانات؛ ستتم إعادة المحاولة تلقائياً',false);setTimeout(()=>{if(currentUser&&latestData)scheduleDataSave(latestData);},5000);}
     },650);
   }
   function saveMinutePreference(key,value){
