@@ -156,7 +156,7 @@ function mergeDesktopData(local,remote) {
 async function cloudRequest(route, cookieValue='', options={}) {
   const response=await fetch(CLOUD_URL+route,{...options,headers:{...(options.headers||{}),...(cookieValue?{Cookie:cookieValue}:{}),'Accept':'application/json'},signal:AbortSignal.timeout(15000)});
   const raw=await response.text();let data;try{data=JSON.parse(raw||'{}')}catch{throw new Error('الخادم السحابي أعاد استجابة غير صالحة ('+response.status+')');}
-  if(!response.ok)throw new Error(data.error||('فشل الاتصال بالخادم السحابي ('+response.status+')'));
+  if(!response.ok){if(response.status===401)desktopCloudSessions.clear();const error=new Error(data.error||('فشل الاتصال بالخادم السحابي ('+response.status+')'));error.status=response.status;throw error;}
   return {data,response};
 }
 const desktopCloudSessions = new Map();

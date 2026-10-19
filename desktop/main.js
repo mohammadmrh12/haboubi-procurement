@@ -66,7 +66,8 @@ async function createWindow() {
   // The existing HTTP server is started in Electron's main process, so the same
   // web UI and API routes work offline without bundling production/private data.
   require(path.join(assets, 'server.js'));
-  const baseUrl = `http://127.0.0.1:${port}`;
+  // Use localhost so Chromium treats the local origin as trustworthy for the existing Secure session cookie.
+  const baseUrl = `http://localhost:${port}`;
   await waitForServer(baseUrl, () => true);
 
   mainWindow = new BrowserWindow({
