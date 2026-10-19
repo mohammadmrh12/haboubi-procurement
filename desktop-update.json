@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
-  "url": "https://medstock.cinematicplus.online/downloads/windows/Haboubi-Procurement-Setup-1.0.1.exe?v=1.0.1",
-  "notes": "الإصدار 1.0.1: تثبيت رابط التحميل المباشر وتوحيد واجهة Windows مع واجهة النظام والنماذج الأصلية ودعم الطباعة على Windows."
+  "version": "1.0.2",
+  "url": "https://medstock.cinematicplus.online/downloads/windows/Haboubi-Procurement-Setup-1.0.2.exe?v=1.0.2",
+  "notes": "الإصدار 1.0.2: أزرار منفصلة لطباعة التخويل والاعتذار فقط، أو استمارات الشراء فقط، أو طباعة الكل، مع تحديث الواجهة والنماذج."
 }

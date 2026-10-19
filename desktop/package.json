@@ -1,6 +1,6 @@
 {
   "name": "haboubi-procurement-desktop",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "نظام مشتريات مستشفى الحبوبي - نسخة Windows محلية",
   "main": "main.js",
   "private": true,
