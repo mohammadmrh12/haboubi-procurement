@@ -12,7 +12,23 @@ function readRememberedCode() { try { if (!safeStorage.isEncryptionAvailable()) 
 function writeRememberedCode(code) { try { if (!safeStorage.isEncryptionAvailable()) return false; const target=rememberedCodePath(); fs.mkdirSync(path.dirname(target),{recursive:true,mode:0o700}); if (!/^\d{4}$/.test(String(code))) { try { fs.unlinkSync(target); } catch {} return true; } const temp=target+'.tmp'; fs.writeFileSync(temp,safeStorage.encryptString(String(code)),{mode:0o600}); fs.renameSync(temp,target); return true; } catch { return false; } }
 ipcMain.handle('haboubi:remember-code', (_event, code) => writeRememberedCode(code));
 ipcMain.handle('haboubi:get-remembered-code', () => readRememberedCode());
-ipcMain.handle('haboubi:print-current', () => new Promise(resolve => { if (!mainWindow || mainWindow.isDestroyed()) return resolve({success:false,reason:'نافذة التطبيق غير متاحة'}); mainWindow.webContents.print({silent:false,printBackground:true,color:true,pageSize:'A4'},(success,failureReason)=>resolve({success,reason:failureReason||''})); }));
+ipcMain.handle('haboubi:print-current', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return {success:false,reason:'نافذة التطبيق غير متاحة'};
+  const nativeResult = await new Promise(resolve => mainWindow.webContents.print({silent:false,printBackground:true,color:true,pageSize:'A4'},(success,reason)=>resolve({success,reason:reason||''})));
+  if (nativeResult.success) return nativeResult;
+  // Some Windows/Parallels environments report no network printers even when the user can save/print a PDF.
+  try {
+    const pdf = await mainWindow.webContents.printToPDF({printBackground:true,pageSize:'A4',margins:{top:0.2,bottom:0.2,left:0.2,right:0.2},preferCSSPageSize:true});
+    const choice = await dialog.showSaveDialog(mainWindow,{title:'حفظ المستند بصيغة PDF للطباعة',defaultPath:path.join(app.getPath('documents'),'مستند-مشتريات-الحبوبي.pdf'),buttonLabel:'حفظ PDF',filters:[{name:'PDF',extensions:['pdf']}]});
+    if (choice.canceled || !choice.filePath) return {success:false,reason:'لم يتم حفظ ملف PDF'};
+    fs.writeFileSync(choice.filePath,pdf);
+    const openError = await shell.openPath(choice.filePath);
+    if (openError) return {success:false,reason:'تم حفظ PDF لكن تعذر فتحه: '+openError,path:choice.filePath};
+    return {success:true,fallback:'pdf',path:choice.filePath,reason:'لا توجد طابعة متاحة؛ تم حفظ المستند PDF لطباعته لاحقاً'};
+  } catch (error) {
+    return {success:false,reason:(nativeResult.reason?nativeResult.reason+'; ':'')+'تعذر إنشاء PDF: '+String(error.message||error)};
+  }
+});
 
 function freePort() {
   return new Promise((resolve, reject) => {
