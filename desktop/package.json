@@ -1,6 +1,6 @@
 {
   "name": "haboubi-procurement-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "نظام مشتريات مستشفى الحبوبي - نسخة Windows محلية",
   "main": "main.js",
   "private": true,
@@ -20,11 +20,32 @@
     "appId": "iq.health.haboubi.procurement",
     "productName": "نظام مشتريات مستشفى الحبوبي",
     "asar": true,
-    "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "package.json"],
-    "extraResources": [{ "from": "assets", "to": "app-assets", "filter": ["**/*"] }],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "app-assets",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Haboubi-Procurement-Setup-${version}.${ext}"
     },
     "nsis": {
