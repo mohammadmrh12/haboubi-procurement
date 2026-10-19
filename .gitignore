@@ -15,3 +15,6 @@ desktop/node_modules/
 desktop/dist/
 desktop/assets/
 desktop/package-lock.json.tmp
+
+downloads/windows/*.exe
+downloads/windows/*.zip

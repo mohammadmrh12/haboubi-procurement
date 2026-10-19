@@ -52,6 +52,23 @@ async function refreshCatalogOverrides(dataDir) {
   return changed;
 }
 
+function compareVersions(left, right) {
+  const a=String(left||'0').split('.').map(x=>Number.parseInt(x,10)||0), b=String(right||'0').split('.').map(x=>Number.parseInt(x,10)||0);
+  for(let i=0;i<Math.max(a.length,b.length);i++){const diff=(a[i]||0)-(b[i]||0);if(diff)return diff;}
+  return 0;
+}
+async function checkForAppUpdate() {
+  try {
+    const response=await fetch('https://medstock.cinematicplus.online/desktop-update.json?check='+Date.now(),{signal:AbortSignal.timeout(4000),cache:'no-store'});
+    if(!response.ok)return;
+    const update=await response.json();
+    if(!/^\d+(?:\.\d+){1,3}$/.test(String(update.version||''))||compareVersions(update.version,app.getVersion())<=0)return;
+    if(typeof update.url!=='string'||!update.url.startsWith('https://medstock.cinematicplus.online/downloads/windows/'))return;
+    const choice=await dialog.showMessageBox(mainWindow,{type:'info',title:PRODUCT_NAME,message:'يتوفر تحديث جديد للنظام',detail:`الإصدار الحالي: ${app.getVersion()}\nالإصدار الجديد: ${update.version}\n${String(update.notes||'').slice(0,500)}`,buttons:['تنزيل التحديث','لاحقاً'],defaultId:0,cancelId:1,noLink:true});
+    if(choice.response===0)shell.openExternal(update.url).catch(()=>{});
+  } catch {}
+}
+
 async function createWindow() {
   const assets = app.isPackaged ? path.join(process.resourcesPath, 'app-assets') : path.join(__dirname, 'assets');
   const dataDir = path.join(app.getPath('userData'), 'data', 'private');
@@ -115,7 +132,7 @@ async function createWindow() {
       });
     }
   });
-  mainWindow.once('ready-to-show', () => { mainWindow.show(); mainWindow.maximize(); });
+  mainWindow.once('ready-to-show', () => { mainWindow.show(); mainWindow.maximize(); checkForAppUpdate(); });
   mainWindow.on('closed', () => { mainWindow = null; });
   await mainWindow.loadURL(baseUrl);
   serverReady = true;

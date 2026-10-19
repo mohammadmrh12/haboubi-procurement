@@ -32,6 +32,8 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   assert.match(main, /HABOUBI_DATA_DIR/);
   assert.match(main, /webContents\.print\(/, 'desktop must use Windows printer dialog');
   assert.match(main, /pageSize:'A4'/, 'Windows print shortcut must request A4 paper');
+  assert.match(main, /desktop-update\.json/, 'desktop should check the public app-update manifest');
+  assert.match(main, /تنزيل التحديث/, 'desktop should offer an update download when a newer installer is published');
   assert.match(main, /about:blank/, 'the existing print preview popup must work in Electron');
   assert.match(preload, /contextBridge\.exposeInMainWorld/);
   for (const asset of ['app.js','auth.js','styles.css','forms-addon.js','catalog-seed.js','drug-aliases.js']) {
