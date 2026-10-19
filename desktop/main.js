@@ -1,10 +1,18 @@
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell, dialog, ipcMain, safeStorage } = require('electron');
 const path = require('node:path');
 const net = require('node:net');
+const fs = require('node:fs');
 
 const PRODUCT_NAME = 'نظام مشتريات مستشفى الحبوبي';
 let mainWindow;
 let serverReady = false;
+let baseUrl = '';
+const rememberedCodePath = () => path.join(app.getPath('userData'), 'remembered-login.bin');
+function readRememberedCode() { try { if (!safeStorage.isEncryptionAvailable()) return ''; const value=safeStorage.decryptString(fs.readFileSync(rememberedCodePath())); return /^\d{4}$/.test(value)?value:''; } catch { return ''; } }
+function writeRememberedCode(code) { try { if (!safeStorage.isEncryptionAvailable()) return false; const target=rememberedCodePath(); fs.mkdirSync(path.dirname(target),{recursive:true,mode:0o700}); if (!/^\d{4}$/.test(String(code))) { try { fs.unlinkSync(target); } catch {} return true; } const temp=target+'.tmp'; fs.writeFileSync(temp,safeStorage.encryptString(String(code)),{mode:0o600}); fs.renameSync(temp,target); return true; } catch { return false; } }
+ipcMain.handle('haboubi:remember-code', (_event, code) => writeRememberedCode(code));
+ipcMain.handle('haboubi:get-remembered-code', () => readRememberedCode());
+ipcMain.handle('haboubi:print-current', () => new Promise(resolve => { if (!mainWindow || mainWindow.isDestroyed()) return resolve({success:false,reason:'نافذة التطبيق غير متاحة'}); mainWindow.webContents.print({silent:false,printBackground:true,color:true,pageSize:'A4'},(success,failureReason)=>resolve({success,reason:failureReason||''})); }));
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -84,7 +92,7 @@ async function createWindow() {
   // web UI and API routes work offline without bundling production/private data.
   require(path.join(assets, 'server.js'));
   // Use localhost so Chromium treats the local origin as trustworthy for the existing Secure session cookie.
-  const baseUrl = `http://localhost:${port}`;
+  baseUrl = `http://localhost:${port}`;
   await waitForServer(baseUrl, () => true);
 
   mainWindow = new BrowserWindow({

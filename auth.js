@@ -61,7 +61,7 @@ function normalizeDosageFormDuplicates(value) {
       label.textContent=user.name;
       const logout=document.createElement('button'); logout.type='button'; logout.id='logoutBtn'; logout.className='secondary logout-btn'; logout.textContent='تسجيل الخروج';
       title.prepend(logout,label);
-      logout.addEventListener('click', async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});}catch{}for(let i=1;i<=10;i++)sessionStorage.removeItem('haboubi-sync-user-'+i);location.reload();});
+      logout.addEventListener('click', async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});}catch{}if(window.haboubiDesktop?.isDesktop)await window.haboubiDesktop.rememberCode('');for(let i=1;i<=10;i++)sessionStorage.removeItem('haboubi-sync-user-'+i);location.reload();});
     }
     // A slow catalog restore or a stalled network request must never trap the user
     // on the startup overlay indefinitely. Let sync continue in the background.
@@ -95,9 +95,11 @@ function normalizeDosageFormDuplicates(value) {
     gate.classList.add('auth-hidden');
     document.body.classList.remove('auth-locked');
   }
+  async function restoreDesktopSession(){if(!window.haboubiDesktop?.isDesktop)return;try{const rememberedCode=await window.haboubiDesktop.getRememberedCode();const result=await api('/api/session');if(result?.user){desktopLoginCode=rememberedCode||'';unlock(result.user);}}catch{}}
+  restoreDesktopSession();
   form.addEventListener('submit', async e => {
     e.preventDefault(); error.textContent=''; const button=$('#loginSubmit'); button.disabled=true; button.textContent='جارٍ التحقق…';
-    try { const result=await api('/api/login',{method:'POST',body:JSON.stringify({code:code.value,remember:$('#rememberDevice').checked})}); desktopLoginCode=code.value; unlock(result.user); }
+    try { const remember=$('#rememberDevice').checked; const result=await api('/api/login',{method:'POST',body:JSON.stringify({code:code.value,remember})}); desktopLoginCode=code.value; if(window.haboubiDesktop?.isDesktop)await window.haboubiDesktop.rememberCode(remember?code.value:''); unlock(result.user); }
     catch(err){error.textContent=err.message;code.select();}
     finally{button.disabled=false;button.textContent='دخول';}
   });
