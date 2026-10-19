@@ -370,8 +370,24 @@ const server=http.createServer(async (req,res)=>{
   fs.stat(file,(err,st)=>{if(err||!st.isFile()){res.writeHead(404);res.end('Not found');return;}
     const ext=path.extname(file).toLowerCase();
     const changingAsset=DESKTOP_MODE&&['catalog-seed.js','drug-aliases.js'].includes(path.basename(file));
-    res.writeHead(200,{'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'||changingAsset?'no-cache':'public, max-age=300'});
-    if(req.method==='HEAD'){res.end();return;} fs.createReadStream(file).pipe(res);
+    const headers={'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'||changingAsset?'no-cache':'public, max-age=300','Accept-Ranges':'bytes','Content-Length':String(st.size)};
+    // Support byte-range requests so mobile browsers/download managers can resume large installers.
+    const range=req.headers.range;
+    if(range){
+      const match=/^bytes=(\d*)-(\d*)$/.exec(range);
+      if(!match){res.writeHead(416,{'Content-Range':`bytes */${st.size}`});res.end();return;}
+      let start=match[1]?Number(match[1]):null, end=match[2]?Number(match[2]):null;
+      if(start===null){const suffix=end||0;start=Math.max(0,st.size-suffix);end=st.size-1;}
+      else if(end===null||end>=st.size)end=st.size-1;
+      if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||start>=st.size||end<start){res.writeHead(416,{'Content-Range':`bytes */${st.size}`});res.end();return;}
+      headers['Content-Range']=`bytes ${start}-${end}/${st.size}`;headers['Content-Length']=String(end-start+1);
+      res.writeHead(206,headers);
+      if(req.method==='HEAD'){res.end();return;}
+      const stream=fs.createReadStream(file,{start,end});stream.on('error',()=>{if(!res.headersSent)res.writeHead(500);res.destroy();});stream.pipe(res);return;
+    }
+    res.writeHead(200,headers);
+    if(req.method==='HEAD'){res.end();return;}
+    const stream=fs.createReadStream(file);stream.on('error',()=>{if(!res.headersSent)res.writeHead(500);res.destroy();});stream.pipe(res);
   });
 });
 server.listen(PORT,'127.0.0.1',()=>console.log('Haboubi server listening on 127.0.0.1:'+PORT));
