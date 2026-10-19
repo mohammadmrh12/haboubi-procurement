@@ -14,17 +14,18 @@ ipcMain.handle('haboubi:remember-code', (_event, code) => writeRememberedCode(co
 ipcMain.handle('haboubi:get-remembered-code', () => readRememberedCode());
 ipcMain.handle('haboubi:print-current', async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return {success:false,reason:'نافذة التطبيق غير متاحة'};
+  // Keep the native Windows print dialog as the first and preferred action.
   const nativeResult = await new Promise(resolve => mainWindow.webContents.print({silent:false,printBackground:true,color:true,pageSize:'A4'},(success,reason)=>resolve({success,reason:reason||''})));
   if (nativeResult.success) return nativeResult;
-  // Some Windows/Parallels environments report no network printers even when the user can save/print a PDF.
+  // If Windows reports that no printer is available, export the exact rendered document and open it in the user's PDF viewer.
+  // The user can then use the viewer's Print command to bring up the Windows print UI.
   try {
     const pdf = await mainWindow.webContents.printToPDF({printBackground:true,pageSize:'A4',margins:{top:0.2,bottom:0.2,left:0.2,right:0.2},preferCSSPageSize:true});
-    const choice = await dialog.showSaveDialog(mainWindow,{title:'حفظ المستند بصيغة PDF للطباعة',defaultPath:path.join(app.getPath('documents'),'مستند-مشتريات-الحبوبي.pdf'),buttonLabel:'حفظ PDF',filters:[{name:'PDF',extensions:['pdf']}]});
-    if (choice.canceled || !choice.filePath) return {success:false,reason:'لم يتم حفظ ملف PDF'};
-    fs.writeFileSync(choice.filePath,pdf);
-    const openError = await shell.openPath(choice.filePath);
-    if (openError) return {success:false,reason:'تم حفظ PDF لكن تعذر فتحه: '+openError,path:choice.filePath};
-    return {success:true,fallback:'pdf',path:choice.filePath,reason:'لا توجد طابعة متاحة؛ تم حفظ المستند PDF لطباعته لاحقاً'};
+    const target = path.join(app.getPath('documents'),'مستند-مشتريات-الحبوبي.pdf');
+    fs.writeFileSync(target,pdf);
+    const openError = await shell.openPath(target);
+    if (openError) return {success:false,reason:'تعذرت نافذة الطباعة في Windows ('+nativeResult.reason+'). وتعذر فتح PDF: '+openError};
+    return {success:true,fallback:'pdf-viewer',path:target,reason:'تم فتح المستند في عارض PDF. استخدم Ctrl+P لإظهار نافذة الطباعة.'};
   } catch (error) {
     return {success:false,reason:(nativeResult.reason?nativeResult.reason+'; ':'')+'تعذر إنشاء PDF: '+String(error.message||error)};
   }
