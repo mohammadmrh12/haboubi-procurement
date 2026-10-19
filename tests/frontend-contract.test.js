@@ -56,10 +56,13 @@ assert.match(app, /searchDebounceTimer = setTimeout\(\(\) => \{ searchDebounceTi
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /Number\.isFinite\(sn\)&&sn>0&&\(!Number\.isFinite\(bn\)\|\|bn<=0\)/, 'Android catalog updater should preserve positive saved need values when refreshing catalog');
 assert.match(app, /data-edit-permanent/, 'search results should expose name editing');
 assert.match(forms, /cols\.map\(k=>.*x\[k\]/, 'print tables should render fields from each document item');
+assert.match(forms, /Array\.from\(\{length:data\.length\}/, 'all material rows must be rendered without the old 8/10 row caps');
+assert.match(forms, /data\.length>8\?' multi-item-page'/, 'cost-estimate tables must paginate when more than eight materials are present');
+assert.match(fs.readFileSync(path.join(root,'styles.css'),'utf8'), /official-page\.multi-item-page\{height:auto!important;min-height:280mm!important;max-height:none!important;overflow:visible!important/, 'long forms must continue across print pages instead of clipping extra rows');
 assert.match(forms, /new URL\('iraqi-ministry-health-logo\.svg',location\.href\)/, 'separate print window must use an absolute ministry-logo URL');
 assert.match(forms, /querySelectorAll\('#printArea img'\)/, 'print should wait for logo images to load before opening the print dialog');
 assert.match(html, /app\.js\?v=93/, 'app asset should have an explicit cache version');
-assert.match(html, /forms-addon\.js\?v=97/, 'forms asset should have an explicit cache version');
+assert.match(html, /forms-addon\.js\?v=98/, 'forms asset should have an explicit cache version');
 assert.match(html, /نبذة عن البرنامج[\s\S]*?نظام مشتريات مستشفى الحبوبي[\s\S]*?الرمز الوطني[\s\S]*?محاضر الاستلام والتقييم[\s\S]*?تم التصميم بواسطة الصيدلاني محمد رحيم حسب[\s\S]*?mailto:mohammad\.mrh4@gmail\.com/, 'about dialog should describe the system, retain designer credit, and include contact email');
 assert.match(forms, /#minutesDialog \.minutes-sign-field input\{font-size:16px!important\}/, 'committee member and chair inputs must stay at 16px on mobile to prevent iOS Safari focus zoom');
 assert.match(forms, /datePartDropdown\('orderMonth','الشهر',12\)[\s\S]*?datePartDropdown\('orderDay','اليوم',31\)/, 'receipt and evaluation administrative-order dates should use month/day dropdowns');
@@ -70,12 +73,12 @@ assert.doesNotMatch(forms.match(/if\(\['year','orderMonth'[\s\S]*?includes\(sel\
 assert.match(app, /function lockNamePickerPageScroll[\s\S]*?body\.style\.position = \"fixed\"[\s\S]*?function unlockNamePickerPageScroll/, 'saved-name picker should lock background scrolling on iOS');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#namePickerDialog \.saved-name-list\{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain\}/, 'saved-name list should contain touch scrolling inside the modal');
 
-assert.match(html, /styles\.css\?v=93/, 'updated input zoom CSS should be cache-busted');
+assert.match(html, /styles\.css\?v=94/, 'updated input zoom CSS should be cache-busted');
 assert.match(html, /الإصدار 1\.5\.6/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
-assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new URL\('styles\.css\?v=91',location\.href\)/, 'separate print window must load current print CSS');
+assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /new URL\('styles\.css\?v=94',location\.href\)/, 'separate print window must load current print CSS');
 assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.style\.setProperty\('page-break-after','avoid','important'\)/, 'print generation must explicitly suppress a trailing blank page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\)\|\|localOwner!==String\(user\.id\)\|\|revision>knownRevision/, 'switching accounts must refresh local data even when a tab marker exists');
@@ -89,8 +92,8 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /name:normaliz
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), /window\.AndroidApp && typeof window\.AndroidApp\.apiRequest/, 'Android auth must use the bundled native API bridge');
-assert.match(sw, /haboubi-procurement-v166/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=93', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=97', 'catalog-seed.js?v=31', 'auth.js?v=25']) {
+assert.match(sw, /haboubi-procurement-v167/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=94', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=98', 'catalog-seed.js?v=31', 'auth.js?v=25']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 const publicHtml=fs.readFileSync(path.join(root,'public-search.html'),'utf8');
@@ -172,7 +175,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v166/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v167/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");

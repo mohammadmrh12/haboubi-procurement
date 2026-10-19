@@ -234,6 +234,13 @@ body.auth-locked>.topbar,body.auth-locked>.layout,body.auth-locked>#toast{visibi
  #printArea .official-page:last-child{break-after:auto!important;page-break-after:auto!important}
  #printArea .auth-page,#printArea .apology-page{height:280mm!important;min-height:280mm!important;max-height:280mm!important;break-after:auto!important;page-break-after:auto!important}
  #printArea .official-page *{box-sizing:border-box}
+ /* Long material lists continue onto additional printed pages instead of being clipped. */
+ #printArea .official-page.multi-item-page{height:auto!important;min-height:280mm!important;max-height:none!important;overflow:visible!important;break-inside:auto!important;page-break-inside:auto!important}
+ #printArea .multi-item-page .official-table{break-inside:auto!important;page-break-inside:auto!important}
+ #printArea .multi-item-page .official-table thead{display:table-header-group!important}
+ #printArea .multi-item-page .official-table tr{break-inside:avoid!important;page-break-inside:avoid!important}
+ #printArea .cost-page.multi-item-page .committee-pair{position:static!important;left:auto!important;right:auto!important;top:auto!important;margin-top:8mm!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ #printArea .auth-page.multi-item-page .fixed-signature,#printArea .apology-page.multi-item-page .fixed-signature{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;margin:10mm 0 0!important;break-inside:avoid!important;page-break-inside:avoid!important}
  /* Keep committee approvals anchored lower on the estimate form, with room for signatures and stamp. */
  #printArea .cost-page{position:relative!important}
  #printArea .cost-page .committee-pair{position:absolute!important;left:12mm!important;right:12mm!important;top:180mm!important;margin:0!important;align-items:flex-start!important}

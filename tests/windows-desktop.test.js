@@ -30,8 +30,8 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   assert.equal(pkg.build.appId, 'iq.health.haboubi.procurement');
   const updateManifest = JSON.parse(fs.readFileSync(path.join(root, 'desktop-update.json'), 'utf8'));
   assert.equal(updateManifest.version, pkg.version, 'public update manifest must match the published installer version');
-  assert.match(updateManifest.url, /downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.6\.exe\?build=1\.0\.6-windows-print-dialog$/, 'installer URL must use a cache-busting version query');
-  assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /https:\/\/medstock\.cinematicplus\.online\/downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.6\.exe\?build=1\.0\.6-windows-print-dialog/, 'Settings should link to the new Windows installer and work from the desktop app too');
+  assert.match(updateManifest.url, /downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.7\.exe\?build=1\.0\.7-unlimited-forms$/, 'installer URL must use a cache-busting version query');
+  assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /https:\/\/medstock\.cinematicplus\.online\/downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.7\.exe\?build=1\.0\.7-unlimited-forms/, 'Settings should link to the new Windows installer and work from the desktop app too');
   assert.match(pkg.scripts['dist:win'], /electron-builder --win nsis --x64/);
   assert.match(main, /HABOUBI_DATA_DIR/);
   assert.match(main, /webContents\.print\(/, 'desktop must use Windows printer dialog');
@@ -87,8 +87,10 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   assert.equal(response.status,200);
   response=await request('/api/data',user1);
   assert.equal((await response.json()).data.items[0].name,'Offline test material');
-  response=await request('/api/history',user1,{method:'POST',body:JSON.stringify({kind:'تخويل',year:'2026',items:[{name:'Offline test material',code:'OFF-1',qty:'1'}]})});
+  const manyItems=Array.from({length:25},(_,i)=>({name:'Offline test material '+(i+1),code:'OFF-'+(i+1),qty:'1'}));
+  response=await request('/api/history',user1,{method:'POST',body:JSON.stringify({kind:'تخويل',year:'2026',items:manyItems})});
   assert.equal(response.status,201);
+  assert.equal((await response.json()).item.items.length,25,'history should save all materials beyond the previous 10-item cap');
   const user2=await login('2222');
   response=await request('/api/data',user2);
   assert.equal((await response.json()).data,null,'users must not see each other’s local data');

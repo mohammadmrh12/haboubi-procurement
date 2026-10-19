@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
-  "url": "https://medstock.cinematicplus.online/downloads/windows/Haboubi-Procurement-Setup-1.0.6.exe?build=1.0.6-windows-print-dialog",
-  "notes": "الإصدار 1.0.6: فتح نافذة الطباعة الأصلية أولاً، وفتح المستند في عارض PDF مع Ctrl+P عند عدم وجود طابعة."
+  "version": "1.0.7",
+  "url": "https://medstock.cinematicplus.online/downloads/windows/Haboubi-Procurement-Setup-1.0.7.exe?build=1.0.7-unlimited-forms",
+  "notes": "الإصدار 1.0.7: إزالة حدود عدد المواد من جميع استمارات الشراء والتخويل والاعتذار، مع استمرار الجداول الطويلة على صفحات إضافية وحفظ جميع المواد بالسجل."
 }
