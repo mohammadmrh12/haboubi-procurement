@@ -29,8 +29,8 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
   assert.equal(pkg.build.appId, 'iq.health.haboubi.procurement');
   const updateManifest = JSON.parse(fs.readFileSync(path.join(root, 'desktop-update.json'), 'utf8'));
-  assert.equal(updateManifest.version, '1.0.0', 'the current public manifest must keep pointing to the currently published installer until the next build is deployed');
-  assert.match(updateManifest.url, /downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.0\.exe\?v=1\.0\.0$/, 'installer URL must use a cache-busting version query');
+  assert.equal(updateManifest.version, pkg.version, 'public update manifest must match the published installer version');
+  assert.match(updateManifest.url, /downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.1\.exe\?v=1\.0\.1$/, 'installer URL must use a cache-busting version query');
   assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /https:\/\/medstock\.cinematicplus\.online\/downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.1\.exe\?v=1\.0\.1/, 'Settings should link to the new Windows installer and work from the desktop app too');
   assert.match(pkg.scripts['dist:win'], /electron-builder --win nsis --x64/);
   assert.match(main, /HABOUBI_DATA_DIR/);
