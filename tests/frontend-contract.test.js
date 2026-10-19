@@ -71,7 +71,7 @@ assert.match(app, /function lockNamePickerPageScroll[\s\S]*?body\.style\.positio
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#namePickerDialog \.saved-name-list\{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain\}/, 'saved-name list should contain touch scrolling inside the modal');
 
 assert.match(html, /styles\.css\?v=92/, 'updated input zoom CSS should be cache-busted');
-assert.match(html, /الإصدار 1\.5\.4/, 'website download label should match the published APK version');
+assert.match(html, /الإصدار 1\.5\.5/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
@@ -80,7 +80,7 @@ assert.match(fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8'), /last\.
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /input:not\(\[type=\"checkbox\"\]\):not\(\[type=\"radio\"\]\), textarea, select\s*\{\s*font-size: max\(16px, 1em\)/, 'all text-entry controls should avoid iOS focus zoom');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /!sessionStorage\.getItem\(marker\)\|\|localOwner!==String\(user\.id\)\|\|revision>knownRevision/, 'switching accounts must refresh local data even when a tab marker exists');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /await syncUserData\(user\);[\s\S]*?gate\.classList\.add\('auth-hidden'\);[\s\S]*?document\.body\.classList\.remove\('auth-locked'\)/, 'app must remain locked until cloud/local startup sync is complete to avoid first-open flicker');
-assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.5\.4'/, 'in-app updater version must match the installed app version');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/local-updates.js'), 'utf8'), /const APP_VERSION='1\.5\.5'/, 'in-app updater version must match the installed app version');
 
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{position:fixed;top:calc\(env\(safe-area-inset-top/, 'notifications should be anchored at the top safe area');
 assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /normalizeDosageFormDuplicates\(item\.name\|\|'مادة بدون اسم'\)/, 'history list must normalize repeated dosage-form words in existing saved records');
@@ -88,7 +88,7 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /name:normaliz
 { const vm = require('node:vm'); const source = fs.readFileSync(path.join(root, 'auth.js'), 'utf8'); const helper = source.match(/function normalizeDosageFormDuplicates\(value\) \{[\s\S]*?\n\}/)[0]; const ctx = {}; vm.createContext(ctx); vm.runInContext(helper + ';this.clean=normalizeDosageFormDuplicates;', ctx); assert.equal(ctx.clean('Xylometazoline Hydrochloride 0.1% Nasal spray spray spray'), 'Xylometazoline Hydrochloride 0.1% Nasal spray'); assert.equal(ctx.clean('Chlorpheniramine maleate 4mg Tablet tablet tablet'), 'Chlorpheniramine maleate 4mg Tablet'); assert.equal(ctx.clean('Amoxicillin 500mg capsule'), 'Amoxicillin 500mg capsule'); }
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
-assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
+assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), /window\.AndroidApp && typeof window\.AndroidApp\.apiRequest/, 'Android auth must use the bundled native API bridge');
 assert.match(sw, /haboubi-procurement-v164/, 'service-worker cache must be versioned');
 for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=96', 'catalog-seed.js?v=31', 'auth.js?v=23']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
@@ -207,3 +207,11 @@ assert.match(serverSource,/zlib\.gzipSync\(raw, \{ level: zlib\.constants\.Z_BES
 assert.match(serverSource,/Content-Encoding.*gzip/,'compressed JSON responses must declare gzip encoding');
 assert.match(fs.readFileSync(path.join(root,'auth.js'),'utf8'),/AbortSignal\.timeout\(30000\)/,'cloud data sync should tolerate slower connections');
 assert.match(fs.readFileSync(path.join(root,'auth.js'),'utf8'),/استجابة غير مفهومة من الخادم \(HTTP /,'sync diagnostics should include HTTP status and response type');
+
+const androidAuth=fs.readFileSync(path.join(root,'android-app/app/src/main/assets/www/auth.js'),'utf8');
+const nativeJava=fs.readFileSync(path.join(root,'android-app/app/src/main/java/com/haboubi/procurement/MainActivity.java'),'utf8');
+assert.match(nativeJava,/offline_code_hash[\s\S]*?offline_user_json/, 'Android must cache a hashed previously validated code and its account for offline login');
+assert.match(nativeJava,/hashOfflineCode\(payload\.optString/,'offline login must verify a hash, not persist the raw access code');
+assert.match(androidAuth,/ANDROID_LOCAL_HISTORY_KEY/, 'Android must persist history operations locally when offline');
+assert.match(androidAuth,/readAndroidQueue\(\);if\(pending\.length\)/, 'Android must retry queued offline history uploads when connected');
+assert.match(fs.readFileSync(path.join(root,'android-app/app/build.gradle.kts'),'utf8'),/versionCode = 51; versionName = \"1\.5\.5\"/, 'Android release version must be bumped');

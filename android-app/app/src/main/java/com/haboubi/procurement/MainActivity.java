@@ -70,6 +70,24 @@ public class MainActivity extends Activity {
     webView.loadUrl("file:///android_asset/www/index.html");
   }
 
+  private String hashOfflineCode(String code) throws Exception {
+    final String alias = "haboubi_offline_login_hmac_v1";
+    java.security.KeyStore keyStore = java.security.KeyStore.getInstance("AndroidKeyStore");
+    keyStore.load(null);
+    if (!keyStore.containsAlias(alias)) {
+      javax.crypto.KeyGenerator generator = javax.crypto.KeyGenerator.getInstance("HmacSHA256", "AndroidKeyStore");
+      generator.init(new android.security.keystore.KeyGenParameterSpec.Builder(alias,
+        android.security.keystore.KeyProperties.PURPOSE_SIGN | android.security.keystore.KeyProperties.PURPOSE_VERIFY)
+        .setDigests(android.security.keystore.KeyProperties.DIGEST_SHA256).build());
+      generator.generateKey();
+      keyStore.load(null);
+    }
+    java.security.Key key = keyStore.getKey(alias, null);
+    javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+    mac.init(key); byte[] bytes = mac.doFinal((code == null ? "" : code).getBytes(StandardCharsets.UTF_8));
+    StringBuilder out = new StringBuilder(); for (byte b : bytes) out.append(String.format(java.util.Locale.ROOT, "%02x", b & 0xff)); return out.toString();
+  }
+
   private class AppBridge {
     @JavascriptInterface public void apiRequest(String rawPath, String method, String body, String requestId) {
       new Thread(() -> {
@@ -110,8 +128,28 @@ public class MainActivity extends Activity {
             byte[] buffer = new byte[4096]; int count; while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
             responseText = out.toString(StandardCharsets.UTF_8.name());
           }
+          if (status >= 200 && status < 300 && "/api/login".equals(path)) {
+            JSONObject payload = new JSONObject(body == null || body.isEmpty() ? "{}" : body);
+            JSONObject parsed = new JSONObject(responseText);
+            JSONObject user = parsed.optJSONObject("user");
+            if (user != null) getSharedPreferences("haboubi_auth", MODE_PRIVATE).edit()
+              .putString("offline_code_hash", hashOfflineCode(payload.optString("code", "")))
+              .putString("offline_user_json", user.toString()).apply();
+          }
         } catch (Exception ex) {
-          responseText = "{\"error\":\"تعذر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة.\"}";
+          if ("/api/login".equals(rawPath) && body != null) {
+            try {
+              JSONObject payload = new JSONObject(body);
+              SharedPreferences prefs = getSharedPreferences("haboubi_auth", MODE_PRIVATE);
+              String expected = prefs.getString("offline_code_hash", "");
+              String actual = hashOfflineCode(payload.optString("code", ""));
+              String userJson = prefs.getString("offline_user_json", "");
+              if (!expected.isEmpty() && expected.equals(actual) && !userJson.isEmpty()) {
+                status = 200;
+                responseText = "{\"user\":" + userJson + ",\"offline\":true}";
+              } else responseText = "{\"error\":\"الدخول دون إنترنت متاح بعد تسجيل دخول ناجح بهذا الجهاز مرة واحدة على الأقل.\"}";
+            } catch (Exception ignored) { responseText = "{\"error\":\"تعذر تسجيل الدخول دون اتصال.\"}"; }
+          } else responseText = "{\"error\":\"غير متصل بالإنترنت؛ ستبقى بياناتك المحلية متاحة للمزامنة لاحقاً.\"}";
         } finally { if (connection != null) connection.disconnect(); }
         final int resultStatus = status;
         final String resultBody = responseText;

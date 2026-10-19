@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 50,
-  "appVersionName": "1.5.4",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.4-edge-logo-fix",
+  "appVersionCode": 51,
+  "appVersionName": "1.5.5",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.5-offline-local-sync",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "مزامنة تلقائية مستمرة لبيانات المستخدم وإعداداته وسجل العمليات وتفضيلات النماذج بين أجهزته، مع فصل البيانات بين المستخدمين."
+  "notes": "واجهة وقاعدة بيانات مدمجة محلياً، دخول دون إنترنت بعد أول دخول ناجح على الجهاز، وحفظ العمليات محلياً مع رفعها عند عودة الاتصال."
 }

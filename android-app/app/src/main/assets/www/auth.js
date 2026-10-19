@@ -42,6 +42,7 @@ function normalizeDosageFormDuplicates(value) {
   }
   async function unlock(user) {
     currentUser = user;
+    if(window.AndroidApp){const owner=localStorage.getItem('haboubiLocalUserId');if(owner&&owner!==String(user.id)){localStorage.removeItem('haboubiDataV2');localStorage.removeItem('haboubiSettings');localStorage.removeItem(ANDROID_LOCAL_HISTORY_KEY);}localStorage.setItem('haboubiLocalUserId',String(user.id));if(!localStorage.getItem('haboubiSettings'))localStorage.setItem('haboubiSettings','{}');}
     // Show a stable loading panel while local catalog readiness and cloud sync run in parallel.
     // Do not expose the default search screen before the account data is reconciled.
     gate.classList.remove('auth-hidden');
@@ -103,6 +104,9 @@ function normalizeDosageFormDuplicates(value) {
   });
   let dataSaveTimer=null, latestData=null, lastServerUpdatedAt=0, syncTimer=null, syncBusy=false, localDirty=false;
   const CLOUD_REVISION_KEY='haboubiCloudUpdatedAt';
+  const ANDROID_LOCAL_HISTORY_KEY='haboubiAndroidHistoryQueueV1';
+  const readAndroidQueue=()=>{try{const value=JSON.parse(localStorage.getItem(ANDROID_LOCAL_HISTORY_KEY)||'[]');return Array.isArray(value)?value:[];}catch{return [];}};
+  const writeAndroidQueue=rows=>{try{localStorage.setItem(ANDROID_LOCAL_HISTORY_KEY,JSON.stringify(rows));}catch(err){console.error('Could not persist offline history',err);}};
   function setSyncStatus(message, ok=false){const status=$('#dbStatus');if(status){status.textContent=message;status.dataset.sync=ok?'ok':'error';}}
   function readLocalMinutePreferences(){const prefs={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key||!key.startsWith('haboubiMinutes:'))continue;const rawKey=key.slice('haboubiMinutes:'.length);try{prefs[rawKey.startsWith('selected:')?rawKey:'custom:'+rawKey]=rawKey.startsWith('selected:')?localStorage.getItem(key):JSON.parse(localStorage.getItem(key)||'[]');}catch{}}return prefs;}
   function applyRemoteData(data,userId){
@@ -126,7 +130,7 @@ function normalizeDosageFormDuplicates(value) {
   }
   function hasActiveEdits(){return !!document.querySelector('.edit-name-dialog:not(.hidden), #minutesDialog, #historyEditDialog:not(.hidden), #editNameDialog:not(.hidden)') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');}
   function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},30000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
-  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{if(window.haboubiDesktop?.isDesktop&&desktopLoginCode){const sync=await api('/api/desktop-sync',{method:'POST',body:JSON.stringify({code:desktopLoginCode}),signal:AbortSignal.timeout(30000)});desktopCloudReady=true;if(sync.catalogueUpdated){setSyncStatus('تم تنزيل تحديث قاعدة المواد؛ سيُطبّق عند إعادة التشغيل',true);}}await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);await (window.haboubiRefreshFromStorage?.()||Promise.resolve());}catch(err){console.error('Continuous cloud sync failed',err);if(window.haboubiDesktop?.isDesktop){desktopCloudReady=false;setSyncStatus('البيانات محفوظة محلياً؛ المزامنة بانتظار الإنترنت',false);}else setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
+  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{if(window.AndroidApp){const pending=readAndroidQueue();if(pending.length){const remaining=[];for(const row of pending){try{await api('/api/history',{method:'POST',body:JSON.stringify({kind:row.kind,items:row.items,year:row.year,authorizedName:row.authorizedName,storekeeperName:row.storekeeperName})});}catch(err){remaining.push(row);}}writeAndroidQueue(remaining);}}if(window.haboubiDesktop?.isDesktop&&desktopLoginCode){const sync=await api('/api/desktop-sync',{method:'POST',body:JSON.stringify({code:desktopLoginCode}),signal:AbortSignal.timeout(30000)});desktopCloudReady=true;if(sync.catalogueUpdated){setSyncStatus('تم تنزيل تحديث قاعدة المواد؛ سيُطبّق عند إعادة التشغيل',true);}}await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);await (window.haboubiRefreshFromStorage?.()||Promise.resolve());}catch(err){console.error('Continuous cloud sync failed',err);if(window.haboubiDesktop?.isDesktop){desktopCloudReady=false;setSyncStatus('البيانات محفوظة محلياً؛ المزامنة بانتظار الإنترنت',false);}else setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
   async function syncUserData(user){
     try{
       // Prepare the local catalog and fetch the account snapshot concurrently to reduce first-open delay.
@@ -183,7 +187,7 @@ function normalizeDosageFormDuplicates(value) {
   async function loadHistory(quiet=false){
     const list=$('#historyList'); if(!list)return; if(!quiet)list.innerHTML='<p class="muted">جارٍ تحميل السجل…</p>';
     try{
-      const result=await api('/api/history'); const rows=result.items||[];
+      let remoteRows=[];try{const result=await api('/api/history');remoteRows=result.items||[];}catch(err){if(!window.AndroidApp)throw err;}const queued=readAndroidQueue();const rows=[...remoteRows,...queued];
       if(!rows.length){list.innerHTML='<p class="muted">لا توجد عمليات محفوظة لهذا المستخدم حتى الآن.</p>';return;}
       list.replaceChildren();
       rows.forEach(row=>{
@@ -238,6 +242,7 @@ function normalizeDosageFormDuplicates(value) {
         note:item.note||''
       }));
       const payload={kind:'اعتذار وتخويل',items:normalizedItems,year:$('#letterYear')?.value||'2026',authorizedName:$('#authorizedName')?.value||'',storekeeperName:$('#storekeeperName')?.value||''};
+      if(window.AndroidApp){const row={...payload,id:'offline-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),createdAt:Date.now(),offlinePending:true};const queue=readAndroidQueue();queue.push(row);writeAndroidQueue(queue);await loadHistory(true);try{const result=await api('/api/history',{method:'POST',body:JSON.stringify(payload)});writeAndroidQueue(readAndroidQueue().filter(x=>x.id!==row.id));await loadHistory(true);return result.item;}catch(err){setSyncStatus('حُفظت العملية على الجهاز؛ ستتم مزامنتها عند توفر الإنترنت',false);return row;}}
       const result=await api('/api/history',{method:'POST',body:JSON.stringify(payload)});await loadHistory();return result.item;
     },
     async restoreSession(){
