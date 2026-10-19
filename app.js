@@ -968,9 +968,13 @@ function printableMaterialName(value) {
 }
 function printableMaterialParts(name, dose, unit) {
   let result = printableMaterialName(name);
+  const compact = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   for (const part of [dose, unit]) {
     const extra = printableMaterialName(part);
     if (!extra) continue;
+    // Strengths often differ only by spaces/punctuation, e.g. 4mg vs 4 mg.
+    const key = compact(extra);
+    if (key.length >= 3 && compact(result).includes(key)) continue;
     const escaped = extra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (new RegExp('(?:^|\\s)' + escaped + '(?:$|\\s)', 'i').test(result)) continue;
     result = (result + ' ' + extra).trim();
