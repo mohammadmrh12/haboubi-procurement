@@ -939,13 +939,21 @@ function renderDocItems() {
 }
 window.haboubiLoadHistoryForEdit = row => {
   const items=Array.isArray(row?.items)?row.items:[];if(!items.length){toast('لا توجد مواد في هذه العملية');return;}
-  state.documentItems=items.map(saved=>{const catalog=state.items.find(x=>String(x.code||'').trim().toLowerCase()===String(saved.code||'').trim().toLowerCase());const item=catalog?{...catalog}:{};const expected=item.annual==null?null:Number(item.annual)/(item.kind==='drug'?4:2);return {...item,id:item.id||0,name:saved.name||item.name||'',formName:saved.name||item.permanentName||item.name||'',code:saved.code||item.code||'',requested:(number(saved.qty)??number(saved.requested)??0),unit:item.unit||'',specification:saved.spec||item.dose||'',note:saved.note||item.note||'',expected,period:item.kind==='drug'?3:6,review:!!item.review||!saved.code||!catalog,aboveOfficialNeed:expected!==null&&Number(saved.qty)>expected,historyEditId:row.id};});
+  state.documentItems=items.map(saved=>{const catalog=state.items.find(x=>String(x.code||'').trim().toLowerCase()===String(saved.code||'').trim().toLowerCase());const item=catalog?{...catalog}:{};const expected=item.annual==null?null:Number(item.annual)/(item.kind==='drug'?4:2);return {...item,id:item.id||0,name:normalizeDosageFormDuplicates(saved.name||item.name||''),formName:normalizeDosageFormDuplicates(saved.name||item.permanentName||item.name||''),code:saved.code||item.code||'',requested:(number(saved.qty)??number(saved.requested)??0),unit:item.unit||'',specification:saved.spec||item.dose||'',note:saved.note||item.note||'',expected,period:item.kind==='drug'?3:6,review:!!item.review||!saved.code||!catalog,aboveOfficialNeed:expected!==null&&Number(saved.qty)>expected,historyEditId:row.id};});
   const y=$('#letterYear'),a=$('#authorizedName'),sk=$('#storekeeperName');if(y)y.value=row.year||'2026';if(a)a.value='';if(sk)sk.value='';
   const nav=$('[data-view="documents"]');if(nav)nav.click();renderDocItems();toast('تم تحميل المواد والكميات المحفوظة إلى صفحة الطباعة.');
 };
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(STORAGE_SETTINGS) || "{}"); } catch { return {}; }
 }
+function normalizeDosageFormDuplicates(value) {
+  let text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  const repeatedForm = /\b(sprays?|tablets?|capsules?|injections?|inhalations?|solutions?|suspensions?|syrups?|creams?|ointments?|drops?|vials?|ampoules?|ampules?|bottles?|nebules?|suppositories?|pfs|prefilled|pens?|cartridges?)\b(?:\s+\1\b)+/gi;
+  let previous;
+  do { previous = text; text = text.replace(repeatedForm, '$1'); } while (text !== previous);
+  return text;
+}
+
 function printableMaterialName(value) {
   let text = String(value ?? "")
     .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))?/gi, " ")
