@@ -99,7 +99,10 @@ async function createWindow() {
     return {action:'deny'};
   });
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith(baseUrl)) event.preventDefault();
+    if (!url.startsWith(baseUrl)) {
+      event.preventDefault();
+      if (url.startsWith('https://') || url.startsWith('mailto:')) shell.openExternal(url).catch(()=>{});
+    }
   });
   mainWindow.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
     if (isMainFrame) console.error('App page failed to load', {code, description, url});
@@ -107,7 +110,7 @@ async function createWindow() {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if ((input.control || input.meta) && input.key.toLowerCase() === 'p') {
       event.preventDefault();
-      mainWindow.webContents.print({silent:false, printBackground:true, color:true, margins:{marginType:'default'}}, (success, failureReason) => {
+      mainWindow.webContents.print({silent:false, printBackground:true, color:true, pageSize:'A4', margins:{marginType:'default'}}, (success, failureReason) => {
         if (!success && failureReason) console.error('Print failed:', failureReason);
       });
     }
