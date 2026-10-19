@@ -228,7 +228,7 @@ async function performDesktopSync(user, code) {
   const remoteIds=new Set(remoteRows.map(row=>String(row.id)));
   for(const row of localRows.filter(x=>x.userId===user.id)){
     if(mappings[row.id]||remoteIds.has(String(row.id)))continue;
-    const result=await cloudRequest('/api/history',cloudCookie,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:row.kind,year:row.year,authorizedName:row.authorizedName,storekeeperName:row.storekeeperName,items:row.items})});
+    const result=await cloudRequest('/api/history',cloudCookie,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:String(row.clientId||row.id||''),kind:row.kind,year:row.year,authorizedName:row.authorizedName,storekeeperName:row.storekeeperName,items:row.items})});
     const cloudId=String(result.data.item?.id||'');if(cloudId){mappings[row.id]=cloudId;cloudToLocal.set(cloudId,row.id);const stamp=Number(row.updatedAt||row.createdAt)||Date.now();historyRevisions[row.id]={lastLocalUpdatedAt:stamp,lastCloudUpdatedAt:Number(result.data.item.updatedAt||result.data.item.createdAt)||stamp};historyUploaded++;}
   }
   writeHistory(localRows);
@@ -354,10 +354,11 @@ const server=http.createServer(async (req,res)=>{
     if(req.method==='POST' && url.pathname==='/api/history'){
       let body; try{body=await readBody(req);}catch(e){json(res,400,{error:e.message});return;}
       const kind=['اعتذار','تخويل','اعتذار وتخويل','حزمة مستندات'].includes(body.kind)?body.kind:'اعتذار وتخويل';
+      const clientId=String(body.clientId||'').trim().slice(0,120);
       const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)})).filter(x=>x.name):[];
       if(!items.length){json(res,400,{error:'لا توجد مواد لحفظها'});return;}
-      const row={id:crypto.randomUUID(),userId:user.id,kind,createdAt:Date.now(),updatedAt:Date.now(),year:String(body.year||new Date().getFullYear()).slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,200),storekeeperName:String(body.storekeeperName||'').slice(0,200),items};
-      try { const rows=readHistory(); rows.push(row); writeHistory(rows); }
+      const row={id:crypto.randomUUID(),userId:user.id,kind,createdAt:Date.now(),updatedAt:Date.now(),year:String(body.year||new Date().getFullYear()).slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,200),storekeeperName:String(body.storekeeperName||'').slice(0,200),items,...(clientId?{clientId}:{})};
+      try { const rows=readHistory(); if(clientId){const existing=rows.find(x=>x.userId===user.id&&x.clientId===clientId);if(existing){json(res,200,{ok:true,item:existing,deduplicated:true});return;}} rows.push(row); writeHistory(rows); }
       catch { json(res,500,{error:'تعذر حفظ العملية؛ سجل العمليات الحالي محفوظ ولم يتم استبداله'}); return; }
       json(res,201,{ok:true,item:row});return;
     }

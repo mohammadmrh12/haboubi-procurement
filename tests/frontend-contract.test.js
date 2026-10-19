@@ -71,7 +71,7 @@ assert.match(app, /function lockNamePickerPageScroll[\s\S]*?body\.style\.positio
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#namePickerDialog \.saved-name-list\{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain\}/, 'saved-name list should contain touch scrolling inside the modal');
 
 assert.match(html, /styles\.css\?v=93/, 'updated input zoom CSS should be cache-busted');
-assert.match(html, /الإصدار 1\.5\.6/, 'website download label should match the published APK version');
+assert.match(html, /الإصدار 1\.5\.7/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea \.official-page:last-child,#printArea > \.official-page\.final-blank-page\{break-after:avoid-page!important;page-break-after:avoid!important/, 'last procurement form must suppress a trailing page break');
@@ -89,8 +89,8 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /name:normaliz
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), /window\.AndroidApp && typeof window\.AndroidApp\.apiRequest/, 'Android auth must use the bundled native API bridge');
-assert.match(sw, /haboubi-procurement-v165/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=93', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=97', 'catalog-seed.js?v=31', 'auth.js?v=24']) {
+assert.match(sw, /haboubi-procurement-v166/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=93', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=97', 'catalog-seed.js?v=31', 'auth.js?v=25']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 const publicHtml=fs.readFileSync(path.join(root,'public-search.html'),'utf8');
@@ -172,7 +172,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v165/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v166/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
@@ -200,7 +200,7 @@ assert.match(fs.readFileSync(path.join(root,'public-search.js'),'utf8'),/service
 const authSource=fs.readFileSync(path.join(root,'auth.js'),'utf8');
 assert.match(authSource,/Promise\.race\(\[startupTask, new Promise\(resolve => setTimeout\(resolve, 12000\)\)\]\)/,'startup screen must release the user if sync stalls');
 assert.match(authSource,/AbortSignal\.timeout\(30000\)/,'API requests must have a timeout rather than hang indefinitely');
-assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/auth\.js\?v=24/,'startup fix must bypass stale auth script caches');
+assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/auth\.js\?v=25/,'startup fix must bypass stale auth script caches');
 
 const serverSource=fs.readFileSync(path.join(root,'server.js'),'utf8');
 assert.match(serverSource,/zlib\.gzipSync\(raw, \{ level: zlib\.constants\.Z_BEST_SPEED \}\)/,'large JSON API responses should be gzip-compressed to reduce sync transfer time');
@@ -214,7 +214,7 @@ assert.match(nativeJava,/offline_code_hash[\s\S]*?offline_user_json/, 'Android m
 assert.match(nativeJava,/hashOfflineCode\(payload\.optString/,'offline login must verify a hash, not persist the raw access code');
 assert.match(androidAuth,/ANDROID_LOCAL_HISTORY_KEY/, 'Android must persist history operations locally when offline');
 assert.match(androidAuth,/readAndroidQueue\(\);if\(pending\.length\)/, 'Android must retry queued offline history uploads when connected');
-assert.match(fs.readFileSync(path.join(root,'android-app/app/build.gradle.kts'),'utf8'),/versionCode = 52; versionName = \"1\.5\.6\"/, 'Android release version must be bumped');
+assert.match(fs.readFileSync(path.join(root,'android-app/app/build.gradle.kts'),'utf8'),/versionCode = 53; versionName = \"1\.5\.7\"/, 'Android release version must be bumped');
 
 const printAddon=fs.readFileSync(path.join(root,'forms-addon.js'),'utf8');
 assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/printLettersOnly[\s\S]*?printPurchasesOnly[\s\S]*?printBoth/, 'print actions must be ordered letters, purchase forms, then all');

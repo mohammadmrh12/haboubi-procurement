@@ -21,6 +21,6 @@ for (const rel of files) {
 fs.copyFileSync(path.join(root, 'server.js'), path.join(dest, 'server.js'));
 // Keep the settings-page APK link useful in Windows without bundling an Android installer in the desktop package.
 const desktopIndex = path.join(dest, 'index.html');
-fs.writeFileSync(desktopIndex, fs.readFileSync(desktopIndex, 'utf8').replace('href="haboubi-procurement-android-latest.apk?build=1.5.4-edge-logo-fix"', 'href="https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.4-edge-logo-fix"'));
+fs.writeFileSync(desktopIndex, fs.readFileSync(desktopIndex, 'utf8').replace('href="haboubi-procurement-android-latest.apk?build=1.5.7-offline-sync"', 'href="https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.7-offline-sync"'));
 // Ensure desktop app assets use the same entrypoint scripts and print stylesheet as the web app.
 console.log(`Prepared ${files.length + 1} shared assets from ${root}`);

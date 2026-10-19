@@ -63,6 +63,14 @@ async function freePort() {
     assert.equal(response.status, 201, 'history operation saved');
     const saved = (await response.json()).item;
     assert.equal(saved.userId, 1);
+    response = await fetch(`${base}/api/history`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ clientId: 'offline-retry-test-1', kind: 'اعتذار', year: '2026', items: [{ name: '__IDEMPOTENCY_TEST__', code: 'IDEMP', qty: '1' }] }) });
+    assert.equal(response.status, 201, 'first queued operation is created');
+    const queued = (await response.json()).item;
+    response = await fetch(`${base}/api/history`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ clientId: 'offline-retry-test-1', kind: 'اعتذار', year: '2026', items: [{ name: '__IDEMPOTENCY_TEST__', code: 'IDEMP', qty: '1' }] }) });
+    assert.equal(response.status, 200, 'retry of queued operation is accepted without a new row');
+    const retried = await response.json();
+    assert.equal(retried.deduplicated, true, 'retry is explicitly marked as deduplicated');
+    assert.equal(retried.item.id, queued.id, 'retry returns the original operation');
     response = await fetch(`${base}/api/history?id=${encodeURIComponent(saved.id)}`, { method: 'PUT', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ year: '2027', items: [{ name: '__AUTH_SMOKE_EDITED__', code: 'TST2', qty: '3' }] }) });
     assert.equal(response.status, 200, 'owner can edit own history item');
     response = await fetch(`${base}/api/history`, { headers: { cookie } });
@@ -81,7 +89,7 @@ async function freePort() {
     response = await fetch(`${base}/.git/config`);
     assert.equal(response.status, 404, 'git files not exposed');
     const historyFile = path.join(tempRoot, 'data', 'private', 'history.json');
-    const rows = JSON.parse(fs.readFileSync(historyFile, 'utf8')).filter(item => item.id !== saved.id);
+    const rows = JSON.parse(fs.readFileSync(historyFile, 'utf8')).filter(item => item.id !== saved.id && item.id !== queued.id);
     fs.writeFileSync(historyFile, JSON.stringify(rows), { mode: 0o600 });
 
     const corruptHistory = '{invalid-json';

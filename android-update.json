@@ -1,8 +1,8 @@
 {
-  "appVersionCode": 52,
-  "appVersionName": "1.5.6",
-  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.6-print-modes",
+  "appVersionCode": 53,
+  "appVersionName": "1.5.7",
+  "apkUrl": "https://medstock.cinematicplus.online/haboubi-procurement-android-latest.apk?build=1.5.7-offline-sync",
   "catalogVersion": "2026.10.17.2",
   "catalogUrl": "https://medstock.cinematicplus.online/catalog-seed.json",
-  "notes": "أزرار منفصلة لطباعة التخويل والاعتذار فقط، أو استمارات الشراء فقط، أو طباعة الكل؛ مع الاحتفاظ بالعمل المحلي والمزامنة."
+  "notes": "تحسين العمل دون إنترنت ومزامنة سجل العمليات ومنع التكرار؛ أزرار منفصلة لطباعة التخويل والاعتذار فقط، أو استمارات الشراء فقط، أو طباعة الكل؛ مع الاحتفاظ بالعمل المحلي والمزامنة."
 }
