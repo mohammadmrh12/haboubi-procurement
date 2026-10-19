@@ -70,7 +70,7 @@ assert.doesNotMatch(forms.match(/if\(\['year','orderMonth'[\s\S]*?includes\(sel\
 assert.match(app, /function lockNamePickerPageScroll[\s\S]*?body\.style\.position = \"fixed\"[\s\S]*?function unlockNamePickerPageScroll/, 'saved-name picker should lock background scrolling on iOS');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#namePickerDialog \.saved-name-list\{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain\}/, 'saved-name list should contain touch scrolling inside the modal');
 
-assert.match(html, /styles\.css\?v=92/, 'updated input zoom CSS should be cache-busted');
+assert.match(html, /styles\.css\?v=93/, 'updated input zoom CSS should be cache-busted');
 assert.match(html, /الإصدار 1\.5\.6/, 'website download label should match the published APK version');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /official-page:last-child[\s\S]*?page-break-after: auto !important/, 'last official page must not force a trailing blank print page');
 assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /#printArea > \.official-page\.final-blank-page\{height:277mm!important/, 'last procurement form should use a shorter print height to avoid fractional overflow');
@@ -89,8 +89,8 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /name:normaliz
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), /window\.AndroidApp && typeof window\.AndroidApp\.apiRequest/, 'Android auth must use the bundled native API bridge');
-assert.match(sw, /haboubi-procurement-v164/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=97', 'catalog-seed.js?v=31', 'auth.js?v=24']) {
+assert.match(sw, /haboubi-procurement-v165/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=93', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=97', 'catalog-seed.js?v=31', 'auth.js?v=24']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 const publicHtml=fs.readFileSync(path.join(root,'public-search.html'),'utf8');
@@ -172,7 +172,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v164/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v165/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
