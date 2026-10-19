@@ -109,7 +109,14 @@ async function freePort() {
     console.log('PASS: corrupt history and user data fail closed without overwriting existing bytes.');
     console.log('PASS: production data/private was not accessed or modified.');
   } finally {
-    if (child && child.exitCode === null) child.kill('SIGTERM');
-    fs.rmSync(tempRoot, { recursive: true, force: true });
+    if (child && child.exitCode === null) {
+      child.kill('SIGTERM');
+      await new Promise(resolve => {
+        if (child.exitCode !== null) return resolve();
+        const timer = setTimeout(resolve, 4000);
+        child.once('exit', () => { clearTimeout(timer); resolve(); });
+      });
+    }
+    fs.rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 150 });
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });
