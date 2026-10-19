@@ -86,8 +86,8 @@ assert.match(fs.readFileSync(path.join(root, 'styles.css'), 'utf8'), /\.toast\{p
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.equal(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), 'Android auth.js must match canonical auth.js');
-assert.match(sw, /haboubi-procurement-v160/, 'service-worker cache must be versioned');
-for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=92', 'forms-addon.js?v=95', 'catalog-seed.js?v=31', 'auth.js?v=21']) {
+assert.match(sw, /haboubi-procurement-v161/, 'service-worker cache must be versioned');
+for (const asset of ['styles.css?v=92', 'drug-aliases.js?v=7', 'app.js?v=92', 'forms-addon.js?v=95', 'catalog-seed.js?v=31', 'auth.js?v=22']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
 const publicHtml=fs.readFileSync(path.join(root,'public-search.html'),'utf8');
@@ -169,7 +169,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v160/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v161/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
@@ -197,7 +197,7 @@ assert.match(fs.readFileSync(path.join(root,'public-search.js'),'utf8'),/service
 const authSource=fs.readFileSync(path.join(root,'auth.js'),'utf8');
 assert.match(authSource,/Promise\.race\(\[startupTask, new Promise\(resolve => setTimeout\(resolve, 12000\)\)\]\)/,'startup screen must release the user if sync stalls');
 assert.match(authSource,/AbortSignal\.timeout\(30000\)/,'API requests must have a timeout rather than hang indefinitely');
-assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/auth\.js\?v=21/,'startup fix must bypass stale auth script caches');
+assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/auth\.js\?v=22/,'startup fix must bypass stale auth script caches');
 
 const serverSource=fs.readFileSync(path.join(root,'server.js'),'utf8');
 assert.match(serverSource,/zlib\.gzipSync\(raw, \{ level: zlib\.constants\.Z_BEST_SPEED \}\)/,'large JSON API responses should be gzip-compressed to reduce sync transfer time');

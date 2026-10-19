@@ -25,6 +25,7 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   const preload = fs.readFileSync(path.join(desktop, 'preload.js'), 'utf8');
   const sourceHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const printSource = fs.readFileSync(path.join(root, 'forms-addon.js'), 'utf8');
+  const assetSyncSource = fs.readFileSync(path.join(desktop, 'scripts', 'sync-assets.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'styles.css'), 'utf8');
   assert.equal(pkg.build.appId, 'iq.health.haboubi.procurement');
   assert.match(pkg.scripts['dist:win'], /electron-builder --win nsis --x64/);
@@ -36,6 +37,9 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
     assert.ok(fs.existsSync(path.join(root, asset)), `shared source asset missing: ${asset}`);
   }
   assert.match(sourceHtml, /forms-addon\.js/);
+  assert.match(assetSyncSource, /public-search\.html/,'desktop package should include the existing public-search page');
+  assert.match(assetSyncSource, /public-search\.css/,'desktop package should include the existing public-search styles');
+  assert.doesNotMatch(assetSyncSource, /data\/private/,'private production data must never be copied into the installer');
   assert.match(printSource, /window\.print\(\)/);
   assert.match(css, /@media print/);
 

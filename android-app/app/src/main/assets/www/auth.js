@@ -60,15 +60,20 @@
     // on the startup overlay indefinitely. Let sync continue in the background.
     let startupFinished = false;
     const startupTask = (async () => {
+      // Load the local snapshot first so the desktop stays usable even if the cloud is slow.
+      await syncUserData(user);
+      await loadHistory(true);
       if (window.haboubiDesktop?.isDesktop && desktopLoginCode) {
+        syncBusy = true;
         try {
           const synced = await api('/api/desktop-sync', {method:'POST', body:JSON.stringify({code:desktopLoginCode}), signal:AbortSignal.timeout(30000)});
           desktopCloudReady = true;
+          await syncUserData(user);
+          await loadHistory(true);
           setSyncStatus(synced.catalogueUpdated ? 'تم تنزيل تحديث قاعدة المواد؛ سيُطبّق عند إعادة التشغيل' : 'تمت مزامنة البيانات المحلية والسحابية', true);
         } catch (err) { desktopCloudReady = false; console.warn('Desktop cloud sync unavailable; continuing offline', err); }
+        finally { syncBusy = false; }
       }
-      await syncUserData(user);
-      await loadHistory(true);
       if (window.haboubiDesktop?.isDesktop && !desktopCloudReady) setSyncStatus('يعمل محلياً؛ ستتم المزامنة عند توفر الإنترنت', false);
       startupFinished = true;
     })();
