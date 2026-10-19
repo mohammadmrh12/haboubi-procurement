@@ -4,8 +4,10 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 
-const ROOT = __dirname;
-const PRIVATE = path.join(ROOT, 'data', 'private');
+const ROOT = path.resolve(process.env.HABOUBI_APP_ROOT || __dirname);
+const PRIVATE = path.resolve(process.env.HABOUBI_DATA_DIR || path.join(ROOT, 'data', 'private'));
+const DESKTOP_MODE = process.env.HABOUBI_DESKTOP === '1';
+const CLOUD_URL = String(process.env.HABOUBI_CLOUD_URL || 'https://medstock.cinematicplus.online').replace(/\/$/, '');
 const HISTORY_FILE = path.join(PRIVATE, 'history.json');
 const USER_DATA_FILE = path.join(PRIVATE, 'user-data.json');
 const SECRET_FILE = path.join(PRIVATE, 'session.key');
@@ -136,8 +138,112 @@ function readUserData() {
   return data;
 }
 function writeUserData(data) { const temp=USER_DATA_FILE+'.tmp'; fs.writeFileSync(temp,JSON.stringify(data),{mode:0o600}); fs.renameSync(temp,USER_DATA_FILE); }
+function readDesktopSyncState() {
+  const file=path.join(PRIVATE,'sync-state.json');
+  try { const value=JSON.parse(fs.readFileSync(file,'utf8')); return value&&typeof value==='object'&&!Array.isArray(value)?value:{}; }
+  catch(e) { if(e.code==='ENOENT')return {}; throw e; }
+}
+function writeDesktopSyncState(state) { const file=path.join(PRIVATE,'sync-state.json'),temp=file+'.tmp';fs.writeFileSync(temp,JSON.stringify(state),{mode:0o600});fs.renameSync(temp,file); }
+function emptyUserData(data) { return !data || !(data.items||[]).length && !(data.files||[]).length && !Object.keys(data.settings||{}).length; }
+function mergeDesktopData(local,remote) {
+  const signature=item=>{const key=[String(item.code||'').trim().toLowerCase(),String(item.name||'').trim().toLowerCase()].join('|');return key==='|'?JSON.stringify(item):key;};
+  const items=new Map((Array.isArray(remote?.items)?remote.items:[]).map(item=>[signature(item),item]));
+  for(const item of (Array.isArray(local?.items)?local.items:[])){const key=signature(item);items.set(key,items.has(key)?{...items.get(key),...item}:item);}
+  const files=new Map();for(const file of [...(remote?.files||[]),...(local?.files||[])]){const key=String(file.name||file.source||JSON.stringify(file));if(!files.has(key))files.set(key,file);}
+  const rs=remote?.settings&&typeof remote.settings==='object'?remote.settings:{};const ls=local?.settings&&typeof local.settings==='object'?local.settings:{};
+  return {items:[...items.values()],files:[...files.values()],settings:{...rs,...ls,minutesPreferences:{...(rs.minutesPreferences||{}),...(ls.minutesPreferences||{})}}};
+}
+async function cloudRequest(route, cookieValue='', options={}) {
+  const response=await fetch(CLOUD_URL+route,{...options,headers:{...(options.headers||{}),...(cookieValue?{Cookie:cookieValue}:{}),'Accept':'application/json'},signal:AbortSignal.timeout(15000)});
+  const raw=await response.text();let data;try{data=JSON.parse(raw||'{}')}catch{throw new Error('الخادم السحابي أعاد استجابة غير صالحة ('+response.status+')');}
+  if(!response.ok)throw new Error(data.error||('فشل الاتصال بالخادم السحابي ('+response.status+')'));
+  return {data,response};
+}
+const desktopCloudSessions = new Map();
+async function performDesktopSync(user, code) {
+  const numeric=Number(code), expectedUser=Number.isInteger(numeric)&&numeric>=0?CODES.indexOf(String(code)): -1;
+  if(expectedUser<0||expectedUser+1!==user.id)throw new Error('كود المستخدم المحلي غير مطابق');
+  let cloudCookie=desktopCloudSessions.get(user.id)?.code===String(code)?desktopCloudSessions.get(user.id).cookie:'';
+  if(!cloudCookie){
+    const login=await fetch(CLOUD_URL+'/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({code:String(code),remember:true}),signal:AbortSignal.timeout(12000)});
+    const loginBody=await login.json().catch(()=>({}));
+    if(!login.ok)throw new Error(loginBody.error||'تعذر تسجيل الدخول إلى خدمة المزامنة');
+    const setCookies=typeof login.headers.getSetCookie==='function'?login.headers.getSetCookie():[login.headers.get('set-cookie')||''];
+    cloudCookie=(setCookies.map(v=>String(v).split(';')[0]).find(v=>v.startsWith('haboubi_session='))||'');
+    if(!cloudCookie)throw new Error('لم يصدر الخادم السحابي جلسة مزامنة');
+    desktopCloudSessions.set(user.id,{code:String(code),cookie:cloudCookie});
+  }
+
+  const userKey=String(user.id), localUsers=readUserData(), local=localUsers[userKey]||null;
+  const remoteResult=await cloudRequest('/api/data',cloudCookie), remote=remoteResult.data.data||null;
+  const states=readDesktopSyncState(), state=states[userKey]||{};
+  let dataAction='unchanged', latestLocal=local, latestRemote=remote;
+  if(remote&&!local){latestLocal={...remote,updatedAt:Date.now()};localUsers[userKey]=latestLocal;writeUserData(localUsers);dataAction='downloaded';}
+  else if(local&&!remote){const put=await cloudRequest('/api/data',cloudCookie,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{items:local.items||[],files:local.files||[],settings:local.settings||{}},baseUpdatedAt:0})});latestRemote={...local,updatedAt:Number(put.data.updatedAt)||Date.now()};dataAction='uploaded';}
+  else if(local&&remote){
+    const localChanged=state.lastLocalUpdatedAt!=null&&Number(local.updatedAt)>Number(state.lastLocalUpdatedAt);
+    const cloudChanged=state.lastCloudUpdatedAt!=null&&Number(remote.updatedAt)>Number(state.lastCloudUpdatedAt);
+    const same=JSON.stringify({items:local.items||[],files:local.files||[],settings:local.settings||{}})===JSON.stringify({items:remote.items||[],files:remote.files||[],settings:remote.settings||{}});
+    if(!state.initialized&&!same){
+      const merged=mergeDesktopData(local,remote);
+      const put=await cloudRequest('/api/data',cloudCookie,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:merged,baseUpdatedAt:Number(remote.updatedAt)||0})});
+      latestRemote={...merged,updatedAt:Number(put.data.updatedAt)||Date.now()};latestLocal=latestRemote;localUsers[userKey]=latestLocal;writeUserData(localUsers);dataAction='merged';
+    } else if(localChanged&&cloudChanged){
+      const merged=mergeDesktopData(local,remote);
+      const put=await cloudRequest('/api/data',cloudCookie,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:merged,baseUpdatedAt:Number(remote.updatedAt)||0})});
+      latestRemote={...merged,updatedAt:Number(put.data.updatedAt)||Date.now()};latestLocal=latestRemote;localUsers[userKey]=latestLocal;writeUserData(localUsers);dataAction='merged';
+    } else if(localChanged){
+      const put=await cloudRequest('/api/data',cloudCookie,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{items:local.items||[],files:local.files||[],settings:local.settings||{}},baseUpdatedAt:Number(remote.updatedAt)||0})});
+      latestRemote={...local,updatedAt:Number(put.data.updatedAt)||Date.now()};dataAction='uploaded';
+    } else if(cloudChanged||!same){latestLocal={...remote,updatedAt:Date.now()};localUsers[userKey]=latestLocal;writeUserData(localUsers);dataAction='downloaded';}
+  }
+
+  // Sync the user's operation history without exposing or combining other users' records.
+  let localRows=readHistory(), remoteHistoryResult=await cloudRequest('/api/history',cloudCookie);
+  let remoteRows=Array.isArray(remoteHistoryResult.data.items)?remoteHistoryResult.data.items:[];
+  const mappings=state.historyMap&&typeof state.historyMap==='object'?state.historyMap:{};
+  const historyRevisions=state.historyRevisions&&typeof state.historyRevisions==='object'?state.historyRevisions:{};
+  const cloudToLocal=new Map(Object.entries(mappings).map(([localId,cloudId])=>[String(cloudId),String(localId)]));
+  const pendingDeletes=Array.isArray(state.deletedHistoryIds)?state.deletedHistoryIds:[], stillDeleted=[];
+  for(const localId of pendingDeletes){const cloudId=String(mappings[localId]||localId);try{await cloudRequest('/api/history?id='+encodeURIComponent(cloudId),cloudCookie,{method:'DELETE'});delete mappings[localId];delete historyRevisions[localId];}catch(err){if(!String(err.message||'').includes('غير موجودة'))stillDeleted.push(localId);else{delete mappings[localId];delete historyRevisions[localId];}}}
+  if(pendingDeletes.length)remoteRows=remoteRows.filter(row=>!pendingDeletes.includes(cloudToLocal.get(String(row.id))||String(row.id)));
+  let historyDownloaded=0,historyUploaded=0,historyUpdated=0;
+  for(const row of remoteRows){
+    const localId=cloudToLocal.get(String(row.id))||String(row.id);
+    const index=localRows.findIndex(x=>x.id===localId&&x.userId===user.id);
+    if(index<0){localRows.push({...row,id:localId,userId:user.id});mappings[localId]=String(row.id);cloudToLocal.set(String(row.id),localId);historyDownloaded++;historyRevisions[localId]={lastLocalUpdatedAt:Number(row.updatedAt||row.createdAt)||0,lastCloudUpdatedAt:Number(row.updatedAt||row.createdAt)||0};continue;}
+    mappings[localId]=String(row.id);cloudToLocal.set(String(row.id),localId);
+    const localRow=localRows[index], rev=historyRevisions[localId]||{};
+    const localRev=Number(localRow.updatedAt||localRow.createdAt)||0, cloudRev=Number(row.updatedAt||row.createdAt)||0;
+    const localChanged=rev.lastLocalUpdatedAt!=null&&localRev>Number(rev.lastLocalUpdatedAt);
+    const cloudChanged=rev.lastCloudUpdatedAt!=null&&cloudRev>Number(rev.lastCloudUpdatedAt);
+    if(cloudChanged&&!localChanged){localRows[index]={...row,id:localId,userId:user.id};historyRevisions[localId]={lastLocalUpdatedAt:cloudRev,lastCloudUpdatedAt:cloudRev};}
+    else if(localChanged){
+      let items=localRow.items||[];
+      if(cloudChanged){const mergedItems=new Map((row.items||[]).map(item=>[[String(item.code||'').trim().toLowerCase(),String(item.name||'').trim().toLowerCase()].join('|'),item]));for(const item of items)mergedItems.set([String(item.code||'').trim().toLowerCase(),String(item.name||'').trim().toLowerCase()].join('|'),item);items=[...mergedItems.values()];}
+      const put=await cloudRequest('/api/history?id='+encodeURIComponent(row.id),cloudCookie,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:localRow.year,authorizedName:localRow.authorizedName,storekeeperName:localRow.storekeeperName,items})});
+      const saved=put.data.item||row;localRows[index]={...localRow,items,updatedAt:Number(saved.updatedAt||saved.createdAt)||Date.now()};const newLocalRev=Number(localRows[index].updatedAt)||localRev;historyRevisions[localId]={lastLocalUpdatedAt:newLocalRev,lastCloudUpdatedAt:Number(saved.updatedAt||saved.createdAt)||Date.now()};historyUpdated++;
+    } else historyRevisions[localId]={lastLocalUpdatedAt:localRev,lastCloudUpdatedAt:cloudRev};
+  }
+  const remoteIds=new Set(remoteRows.map(row=>String(row.id)));
+  for(const row of localRows.filter(x=>x.userId===user.id)){
+    if(mappings[row.id]||remoteIds.has(String(row.id)))continue;
+    const result=await cloudRequest('/api/history',cloudCookie,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:row.kind,year:row.year,authorizedName:row.authorizedName,storekeeperName:row.storekeeperName,items:row.items})});
+    const cloudId=String(result.data.item?.id||'');if(cloudId){mappings[row.id]=cloudId;cloudToLocal.set(cloudId,row.id);const stamp=Number(row.updatedAt||row.createdAt)||Date.now();historyRevisions[row.id]={lastLocalUpdatedAt:stamp,lastCloudUpdatedAt:Number(result.data.item.updatedAt||result.data.item.createdAt)||stamp};historyUploaded++;}
+  }
+  writeHistory(localRows);
+
+  const savedLocal=readUserData()[userKey]||null, savedRemote=latestRemote||remote||null;
+  states[userKey]={initialized:true,lastLocalUpdatedAt:Number(savedLocal?.updatedAt)||0,lastCloudUpdatedAt:Number(savedRemote?.updatedAt)||0,historyMap:mappings,historyRevisions,deletedHistoryIds:stillDeleted,lastSyncAt:Date.now()};writeDesktopSyncState(states);
+  return {ok:true,dataAction,historyDownloaded,historyUploaded,historyUpdated,catalogueUpdated:false,syncedAt:Date.now()};
+}
+
 function safeStatic(urlPath) {
   let decoded; try { decoded=decodeURIComponent(urlPath.split('?')[0]); } catch { return null; }
+  if (DESKTOP_MODE && ['/catalog-seed.js','/drug-aliases.js'].includes(decoded)) {
+    const override=path.join(PRIVATE,'catalog-overrides',decoded.slice(1));
+    if (fs.existsSync(override)) return override;
+  }
   if (decoded === '/') decoded='/index.html';
   if (decoded.split('/').some(part => part.startsWith('.') && part.length > 1)) return null;
   const file=path.resolve(ROOT,'.'+decoded);
@@ -166,6 +272,11 @@ const server=http.createServer(async (req,res)=>{
     const user=getUser(req);
     if(!user){json(res,401,{error:'يلزم تسجيل الدخول'});return;}
     if(req.method==='GET' && url.pathname==='/api/session'){json(res,200,{ok:true,user});return;}
+    if(req.method==='POST' && url.pathname==='/api/desktop-sync'){
+      if(!DESKTOP_MODE){json(res,404,{error:'المسار غير موجود'});return;}
+      let body;try{body=await readBody(req,4096);}catch(e){json(res,400,{error:e.message});return;}
+      try{const result=await performDesktopSync(user,String(body.code||''));json(res,200,result);}catch(e){json(res,503,{error:'تعذر المزامنة الآن: '+String(e.message||'خطأ اتصال').slice(0,220)});}return;
+    }
     if(req.method==='POST' && url.pathname==='/api/ai-search'){
       if (!allowAiRequest(user.id)) { json(res,429,{error:'وصلت إلى الحد المؤقت لطلبات البحث الذكي؛ انتظر دقيقة ثم أعد المحاولة'}); return; }
       let body; try{body=await readBody(req,8192);}catch(e){json(res,400,{error:e.message});return;}
@@ -234,7 +345,9 @@ const server=http.createServer(async (req,res)=>{
         const rows=readHistory();
         const index=rows.findIndex(row=>row.id===id && row.userId===user.id);
         if(index<0){json(res,404,{error:'العملية غير موجودة في سجل هذا المستخدم'});return;}
-        rows.splice(index,1);writeHistory(rows);json(res,200,{ok:true});
+        rows.splice(index,1);writeHistory(rows);
+        if(DESKTOP_MODE){const all=readDesktopSyncState(),entry=all[String(user.id)]||{};entry.deletedHistoryIds=[...new Set([...(entry.deletedHistoryIds||[]),id])];all[String(user.id)]=entry;writeDesktopSyncState(all);}
+        json(res,200,{ok:true});
       } catch { json(res,500,{error:'تعذر حذف العملية؛ سجل العمليات الحالي محفوظ ولم يتم استبداله'}); }
       return;
     }
@@ -243,7 +356,7 @@ const server=http.createServer(async (req,res)=>{
       const kind=['اعتذار','تخويل','اعتذار وتخويل','حزمة مستندات'].includes(body.kind)?body.kind:'اعتذار وتخويل';
       const items=Array.isArray(body.items)?body.items.slice(0,10).map(x=>({name:String(x.name||'').slice(0,400),code:String(x.code||'').slice(0,100),qty:String(x.qty??x.requested??'').slice(0,80),spec:String(x.spec||'').slice(0,300),note:String(x.note||'').slice(0,300)})).filter(x=>x.name):[];
       if(!items.length){json(res,400,{error:'لا توجد مواد لحفظها'});return;}
-      const row={id:crypto.randomUUID(),userId:user.id,kind,createdAt:Date.now(),year:String(body.year||new Date().getFullYear()).slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,200),storekeeperName:String(body.storekeeperName||'').slice(0,200),items};
+      const row={id:crypto.randomUUID(),userId:user.id,kind,createdAt:Date.now(),updatedAt:Date.now(),year:String(body.year||new Date().getFullYear()).slice(0,4),authorizedName:String(body.authorizedName||'').slice(0,200),storekeeperName:String(body.storekeeperName||'').slice(0,200),items};
       try { const rows=readHistory(); rows.push(row); writeHistory(rows); }
       catch { json(res,500,{error:'تعذر حفظ العملية؛ سجل العمليات الحالي محفوظ ولم يتم استبداله'}); return; }
       json(res,201,{ok:true,item:row});return;
@@ -255,7 +368,8 @@ const server=http.createServer(async (req,res)=>{
   if(!file){res.writeHead(404);res.end('Not found');return;}
   fs.stat(file,(err,st)=>{if(err||!st.isFile()){res.writeHead(404);res.end('Not found');return;}
     const ext=path.extname(file).toLowerCase();
-    res.writeHead(200,{'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'?'no-cache':'public, max-age=300'});
+    const changingAsset=DESKTOP_MODE&&['catalog-seed.js','drug-aliases.js'].includes(path.basename(file));
+    res.writeHead(200,{'Content-Type':MIME[ext]||'application/octet-stream','Cache-Control':ext==='.html'||changingAsset?'no-cache':'public, max-age=300'});
     if(req.method==='HEAD'){res.end();return;} fs.createReadStream(file).pipe(res);
   });
 });

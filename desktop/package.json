@@ -1,0 +1,39 @@
+{
+  "name": "haboubi-procurement-desktop",
+  "version": "1.0.0",
+  "description": "نظام مشتريات مستشفى الحبوبي - نسخة Windows محلية",
+  "main": "main.js",
+  "private": true,
+  "author": "Haboubi Procurement",
+  "license": "UNLICENSED",
+  "scripts": {
+    "sync-assets": "node scripts/sync-assets.js",
+    "start": "npm run sync-assets && electron .",
+    "dist:win": "npm run sync-assets && electron-builder --win nsis --x64",
+    "dist:win:portable": "npm run sync-assets && electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.7.0"
+  },
+  "build": {
+    "appId": "iq.health.haboubi.procurement",
+    "productName": "نظام مشتريات مستشفى الحبوبي",
+    "asar": true,
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "package.json"],
+    "extraResources": [{ "from": "assets", "to": "app-assets", "filter": ["**/*"] }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "Haboubi-Procurement-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "نظام مشتريات مستشفى الحبوبي",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

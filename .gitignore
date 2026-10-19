@@ -10,3 +10,8 @@ logs/*.log
 
 # Local Android SDK path (machine-specific)
 android-app/local.properties
+
+desktop/node_modules/
+desktop/dist/
+desktop/assets/
+desktop/package-lock.json.tmp

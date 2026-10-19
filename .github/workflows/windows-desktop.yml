@@ -1,0 +1,44 @@
+name: Windows Desktop EXE
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'server.js'
+      - 'auth.js'
+      - 'index.html'
+      - 'app.js'
+      - 'styles.css'
+      - 'forms-addon.js'
+      - 'catalog-seed.js'
+      - 'drug-aliases.js'
+      - 'vendor/**'
+      - 'tests/**'
+      - '.github/workflows/windows-desktop.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Run source tests
+        run: node --test tests/drug-search.test.js tests/frontend-contract.test.js tests/import-parser.test.js tests/auth-smoke.js tests/windows-desktop.test.js
+      - name: Build Windows installer
+        working-directory: desktop
+        run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Haboubi-Procurement-Windows-x64
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30

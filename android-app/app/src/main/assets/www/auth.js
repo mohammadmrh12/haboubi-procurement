@@ -1,6 +1,8 @@
 (() => {
   const $ = s => document.querySelector(s);
   let currentUser = null;
+  let desktopLoginCode = '';
+  let desktopCloudReady = false;
   const gate = $('#authGate'), form = $('#loginForm'), code = $('#loginCode'), error = $('#loginError');
   const nativeRequests = new Map();
   let nativeRequestId = 0;
@@ -58,8 +60,16 @@
     // on the startup overlay indefinitely. Let sync continue in the background.
     let startupFinished = false;
     const startupTask = (async () => {
+      if (window.haboubiDesktop?.isDesktop && desktopLoginCode) {
+        try {
+          const synced = await api('/api/desktop-sync', {method:'POST', body:JSON.stringify({code:desktopLoginCode}), signal:AbortSignal.timeout(30000)});
+          desktopCloudReady = true;
+          setSyncStatus(synced.catalogueUpdated ? 'تم تنزيل تحديث قاعدة المواد؛ سيُطبّق عند إعادة التشغيل' : 'تمت مزامنة البيانات المحلية والسحابية', true);
+        } catch (err) { desktopCloudReady = false; console.warn('Desktop cloud sync unavailable; continuing offline', err); }
+      }
       await syncUserData(user);
       await loadHistory(true);
+      if (window.haboubiDesktop?.isDesktop && !desktopCloudReady) setSyncStatus('يعمل محلياً؛ ستتم المزامنة عند توفر الإنترنت', false);
       startupFinished = true;
     })();
     startupTask.catch(err => console.error('Startup preparation failed', err));
@@ -75,7 +85,7 @@
   }
   form.addEventListener('submit', async e => {
     e.preventDefault(); error.textContent=''; const button=$('#loginSubmit'); button.disabled=true; button.textContent='جارٍ التحقق…';
-    try { const result=await api('/api/login',{method:'POST',body:JSON.stringify({code:code.value,remember:$('#rememberDevice').checked})}); unlock(result.user); }
+    try { const result=await api('/api/login',{method:'POST',body:JSON.stringify({code:code.value,remember:$('#rememberDevice').checked})}); desktopLoginCode=code.value; unlock(result.user); }
     catch(err){error.textContent=err.message;code.select();}
     finally{button.disabled=false;button.textContent='دخول';}
   });
@@ -104,7 +114,7 @@
   }
   function hasActiveEdits(){return !!document.querySelector('.edit-name-dialog:not(.hidden), #minutesDialog, #historyEditDialog:not(.hidden), #editNameDialog:not(.hidden)') || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||'');}
   function startContinuousSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>{if(document.visibilityState==='visible')pollRemoteData();},30000);window.addEventListener('online',pollRemoteData);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteData();});}
-  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);await (window.haboubiRefreshFromStorage?.()||Promise.resolve());}catch(err){console.error('Continuous cloud sync failed',err);setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
+  async function pollRemoteData(){if(!currentUser||syncBusy||dataSaveTimer)return;syncBusy=true;try{if(window.haboubiDesktop?.isDesktop&&desktopLoginCode){const sync=await api('/api/desktop-sync',{method:'POST',body:JSON.stringify({code:desktopLoginCode}),signal:AbortSignal.timeout(30000)});desktopCloudReady=true;if(sync.catalogueUpdated){setSyncStatus('تم تنزيل تحديث قاعدة المواد؛ سيُطبّق عند إعادة التشغيل',true);}}await loadHistory(true);const result=await api('/api/data');const remote=result.data;if(!remote)return;const revision=Number(remote.updatedAt)||0;if(revision<=lastServerUpdatedAt)return;if(localDirty||hasActiveEdits()){setSyncStatus('توجد تعديلات بانتظار المزامنة',false);return;}applyRemoteData(remote,currentUser.id);lastServerUpdatedAt=revision;sessionStorage.setItem('haboubi-sync-user-'+currentUser.id,'1');setSyncStatus('تمت مزامنة آخر التعديلات',true);await (window.haboubiRefreshFromStorage?.()||Promise.resolve());}catch(err){console.error('Continuous cloud sync failed',err);if(window.haboubiDesktop?.isDesktop){desktopCloudReady=false;setSyncStatus('البيانات محفوظة محلياً؛ المزامنة بانتظار الإنترنت',false);}else setSyncStatus('بانتظار الاتصال لمزامنة التعديلات',false);}finally{syncBusy=false;}}
   async function syncUserData(user){
     try{
       // Prepare the local catalog and fetch the account snapshot concurrently to reduce first-open delay.
@@ -219,6 +229,7 @@
       const result=await api('/api/history',{method:'POST',body:JSON.stringify(payload)});await loadHistory();return result.item;
     },
     async restoreSession(){
+      if(window.haboubiDesktop?.isDesktop){document.body.classList.add('auth-locked');gate.classList.remove('auth-hidden');setTimeout(()=>code.focus(),100);return;}
       try{const result=await api('/api/session');unlock(result.user);}
       catch{document.body.classList.add('auth-locked');gate.classList.remove('auth-hidden');setTimeout(()=>code.focus(),100);}
     }
