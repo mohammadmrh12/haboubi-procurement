@@ -20,4 +20,7 @@
 
 <footer>الاحتياج المحسوب = الاحتياج السنوي ÷ 4 للأدوية، و÷ 2 للمستلزمات الطبية. القيم من قاعدة بيانات الملزمة المتاحة للنظام.</footer></main>
 <script defer src="catalog-seed.js?v=31"></script><script defer src="public-search.js?v=5"></script>
+<script>
+(function(){if(!('serviceWorker' in navigator))return;var reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(!reloaded){reloaded=true;location.reload();}});navigator.serviceWorker.register('./sw.js?force=168',{updateViaCache:'none'}).then(function(reg){reg.update().catch(function(){});if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}).catch(function(){});})();
+</script>
 </body></html>
