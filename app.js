@@ -951,7 +951,23 @@ function printableMaterialName(value) {
     .replace(/قاعدة\s*[اأ]?قل\s*الأسعار(?:\s*\([^)]*\))?/gi, " ")
     .replace(/\(\s*\d{2}-[A-Z0-9-]+\s*\)/g, " ");
   if (/[A-Za-z]/.test(text)) text = text.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, " ");
-  return text.replace(/[،؛]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  text = text.replace(/[،؛]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  // Remove only immediately repeated dosage-form words; preserve concentrations, strengths, and the stored catalog name.
+  const repeatedForm = /\b(sprays?|tablets?|capsules?|injections?|inhalations?|solutions?|suspensions?|syrups?|creams?|ointments?|drops?|vials?|ampoules?|ampules?|bottles?|nebules?|suppositories?|pfs|prefilled|pens?|cartridges?)\b(?:\s+\1\b)+/gi;
+  let previous;
+  do { previous = text; text = text.replace(repeatedForm, '$1'); } while (text !== previous);
+  return text;
+}
+function printableMaterialParts(name, dose, unit) {
+  let result = printableMaterialName(name);
+  for (const part of [dose, unit]) {
+    const extra = printableMaterialName(part);
+    if (!extra) continue;
+    const escaped = extra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp('(?:^|\\s)' + escaped + '(?:$|\\s)', 'i').test(result)) continue;
+    result = (result + ' ' + extra).trim();
+  }
+  return printableMaterialName(result);
 }
 function printDocument(type) {
   if (!state.documentItems.length) { toast("أضف مادة واحدة على الأقل أولاً"); return; }
@@ -963,7 +979,7 @@ function printDocument(type) {
   const store = $("#storekeeperName").value.trim();
   const date = ($( "#letterYear" )?.value || "2026") + " /　　/　　";
   const rows = state.documentItems.map((item,i) =>
-    '<tr><td>' + (i+1) + '</td><td>' + esc(printableMaterialName([item.formName || item.name, item.dose || item.specification, item.unit].filter(Boolean).join(' '))) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
+    '<tr><td>' + (i+1) + '</td><td>' + esc(printableMaterialParts(item.formName || item.name, item.dose || item.specification, item.unit)) + '</td><td class="code">' + esc(item.code || "غير مسجل") +
     '</td><td>' + fmt(item.requested) + '</td>' + (isAuth ? '<td>يُستكمل من الجهة المختصة</td>' : '') + '</tr>'
   ).join("");
   const bodyText = isAuth
