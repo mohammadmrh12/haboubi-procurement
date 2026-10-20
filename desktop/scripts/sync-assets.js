@@ -32,8 +32,9 @@ const androidPrintBlock = ` if(window.AndroidApp&&typeof window.AndroidApp.print
 const desktopPrintBlock = androidPrintBlock + `
  if(window.haboubiDesktop?.isDesktop){const view=$('#'+viewId);if(!view)return;view.classList.add('printing');const old=$('#'+areaId);if(old)old.remove();const area=document.createElement('div');area.id=areaId;area.innerHTML=html.replaceAll('src=\"iraqi-ministry-health-logo.svg\"','src=\"'+new URL('iraqi-ministry-health-logo.svg',location.href).href+'\"');view.appendChild(area);window.haboubiDesktop.printCurrent().then(result=>{if(!result?.success&&result?.reason)alert('تعذرت طباعة المستند: '+result.reason)}).catch(err=>alert('تعذرت طباعة المستند: '+err.message)).finally(()=>{area.remove();view.classList.remove('printing')});return;}`;
 if (!formsSource.includes('if(window.haboubiDesktop?.isDesktop){const view=')) {
-  if (!formsSource.includes(androidPrintBlock)) throw new Error('Could not find canonical print block');
-  formsSource = formsSource.replace(androidPrintBlock, desktopPrintBlock);
+  const androidPrintPattern = /if\(window\.AndroidApp&&typeof window\.AndroidApp\.printHtml==='function'\)\{\s*window\.AndroidApp\.printHtml\(html,'file:\/\/\/android_asset\/www\/styles\.css'\);\s*return;\s*\}/;
+  if (!androidPrintPattern.test(formsSource)) throw new Error('Could not find canonical print block');
+  formsSource = formsSource.replace(androidPrintPattern, desktopPrintBlock.trimStart());
   formsSource = formsSource.replace('requestAnimationFrame(()=>{window.print();setTimeout(cleanup,3000)});', 'requestAnimationFrame(()=>{if(window.haboubiDesktop?.isDesktop)window.haboubiDesktop.printCurrent();else window.print();setTimeout(cleanup,3000)});');
   formsSource = formsSource.replace("window.addEventListener('afterprint',cleanup,{once:true});window.print();setTimeout(cleanup,60000);", "window.addEventListener('afterprint',cleanup,{once:true});if(window.haboubiDesktop?.isDesktop)window.haboubiDesktop.printCurrent();else window.print();setTimeout(cleanup,60000);");
   fs.writeFileSync(desktopForms, formsSource);
