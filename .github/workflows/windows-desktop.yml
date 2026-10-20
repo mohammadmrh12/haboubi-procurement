@@ -18,7 +18,7 @@ on:
       - '.github/workflows/windows-desktop.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -67,3 +67,12 @@ jobs:
           path: desktop-32/dist/*.exe
           if-no-files-found: error
           retention-days: 30
+      - name: Publish public 32-bit installer
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-32bit-v1.0.7
+          name: Haboubi Procurement Windows 32-bit 1.0.7
+          body: Windows 32-bit (x86) installer for Haboubi Procurement. Built by GitHub Actions from the main branch.
+          prerelease: true
+          files: desktop-32/dist/Haboubi-Procurement-Setup-1.0.7-32bit.exe
+          fail_on_unmatched_files: true
