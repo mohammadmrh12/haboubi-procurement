@@ -33,6 +33,11 @@ test('Windows desktop keeps the shared UI and print forms, and local login/data 
   assert.match(updateManifest.url, /downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.7\.exe\?build=1\.0\.7-unlimited-forms-v2$/, 'installer URL must use a cache-busting version query');
   assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /https:\/\/medstock\.cinematicplus\.online\/downloads\/windows\/Haboubi-Procurement-Setup-1\.0\.7\.exe\?build=1\.0\.7-unlimited-forms-v2/, 'Settings should link to the new Windows installer and work from the desktop app too');
   assert.match(pkg.scripts['dist:win'], /electron-builder --win nsis --x64/);
+  const ia32Pkg = JSON.parse(fs.readFileSync(path.join(root, 'desktop-32', 'package.json'), 'utf8'));
+  assert.equal(ia32Pkg.devDependencies.electron, '43.3.0', '32-bit build must use the latest Electron major with ia32 support');
+  assert.match(ia32Pkg.scripts['dist:win:ia32'], /electron-builder --win nsis --ia32/);
+  assert.match(ia32Pkg.build.win.target[0].arch.join(','), /ia32/);
+  assert.match(sourceHtml, /Haboubi-Procurement-Setup-1\.0\.7-32bit\.exe\?build=1\.0\.7-ia32/, 'Settings must expose a separate 32-bit Windows download');
   assert.match(main, /HABOUBI_DATA_DIR/);
   assert.match(main, /webContents\.print\(/, 'desktop must use Windows printer dialog');
   assert.match(main, /pageSize:'A4'/, 'Windows print shortcut must request A4 paper');

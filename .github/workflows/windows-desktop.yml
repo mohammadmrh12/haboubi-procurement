@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'desktop/**'
+      - 'desktop-32/**'
       - 'server.js'
       - 'auth.js'
       - 'index.html'
@@ -40,5 +41,29 @@ jobs:
         with:
           name: Haboubi-Procurement-Windows-x64
           path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  build-windows-ia32:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop-32/package-lock.json
+      - name: Install 32-bit desktop dependencies
+        working-directory: desktop-32
+        run: npm ci
+      - name: Run source tests
+        run: node --test tests/drug-search.test.js tests/frontend-contract.test.js tests/import-parser.test.js tests/auth-smoke.js tests/windows-desktop.test.js
+      - name: Build Windows 32-bit installer
+        working-directory: desktop-32
+        run: npm run dist:win:ia32
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Haboubi-Procurement-Windows-ia32
+          path: desktop-32/dist/*.exe
           if-no-files-found: error
           retention-days: 30

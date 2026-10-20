@@ -18,3 +18,8 @@ desktop/package-lock.json.tmp
 
 downloads/windows/*.exe
 downloads/windows/*.zip
+
+# Legacy 32-bit Windows build outputs
+desktop-32/node_modules/
+desktop-32/dist/
+desktop-32/assets/

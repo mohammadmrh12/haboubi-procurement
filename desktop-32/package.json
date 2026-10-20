@@ -1,0 +1,38 @@
+{
+  "name": "haboubi-procurement-desktop-32bit",
+  "version": "1.0.7",
+  "description": "نظام مشتريات مستشفى الحبوبي - نسخة Windows 32-bit",
+  "main": "main.js",
+  "private": true,
+  "author": "Haboubi Procurement",
+  "license": "UNLICENSED",
+  "scripts": {
+    "sync-assets": "node scripts/sync-assets.js",
+    "start": "npm run sync-assets && electron .",
+    "dist:win:ia32": "npm run sync-assets && electron-builder --win nsis --ia32"
+  },
+  "devDependencies": {
+    "electron": "43.3.0",
+    "electron-builder": "26.7.0"
+  },
+  "build": {
+    "appId": "iq.health.haboubi.procurement",
+    "productName": "نظام مشتريات مستشفى الحبوبي",
+    "asar": true,
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "package.json"],
+    "extraResources": [{ "from": "assets", "to": "app-assets", "filter": ["**/*"] }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["ia32"] }],
+      "artifactName": "Haboubi-Procurement-Setup-${version}-32bit.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "نظام مشتريات مستشفى الحبوبي (32-bit)",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
