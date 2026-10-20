@@ -92,7 +92,7 @@ assert.match(fs.readFileSync(path.join(root, 'auth.js'), 'utf8'), /name:normaliz
 assert.equal(androidApp, app, 'Android app.js must match canonical app.js');
 assert.equal(androidForms, forms, 'Android forms-addon.js must match canonical forms-addon.js');
 assert.match(fs.readFileSync(path.join(root, 'android-app/app/src/main/assets/www/auth.js'), 'utf8'), /window\.AndroidApp && typeof window\.AndroidApp\.apiRequest/, 'Android auth must use the bundled native API bridge');
-assert.match(sw, /haboubi-procurement-v169/, 'service-worker cache must be versioned');
+assert.match(sw, /haboubi-procurement-v170/, 'service-worker cache must be versioned');
 for (const asset of ['styles.css?v=94', 'drug-aliases.js?v=7', 'app.js?v=93', 'forms-addon.js?v=98', 'catalog-seed.js?v=31', 'auth.js?v=25']) {
   assert.ok(sw.includes('./' + asset), `offline precache must include the exact versioned URL ${asset}`);
 }
@@ -175,7 +175,7 @@ for (const alias of ["سفترايكزون", "سفتر", "سيفترياكسون
 }
 assert.deepStrictEqual(expandedAliasData.aliases, expandedAliases, "JSON alias crosswalk must match the runtime JavaScript dictionary");
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /drug-aliases\.js\?v=7/, "website should load the expanded alias dictionary version");
-assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v169/, "service worker cache should be invalidated for expanded aliases");
+assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /haboubi-procurement-v170/, "service worker cache should be invalidated for expanded aliases");
 assert.match(fs.readFileSync(path.join(root, "sw.js"), "utf8"), /drug-aliases\.js\?v=7/, "service worker should cache the expanded alias dictionary version");
 
 assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /id="printEvaluationMinutes"[\s\S]*?id="printReceiptMinutes"[\s\S]*?id="printReferralDecision"/, "print page should expose receipt, evaluation and referral decision actions beside the main preview/print button");
